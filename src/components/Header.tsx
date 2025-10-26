@@ -72,7 +72,7 @@ export function Header({ activeSection, onSectionChange }: HeaderProps) {
                       ? 'text-orange-600'
                       : 'text-gray-600 hover:text-orange-600'
                   }`}
-                >
+                > 
                   {item.label}
                 </button>
               ))}

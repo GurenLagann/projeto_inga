@@ -52,19 +52,19 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
 
     const achievements = [
         {
-            icon: <Award className="w-8 h-8 text-orange-600" />,
+            icon: <Award className="w-8 h-8 text-blue-600" />,
             title: "Graduações Realizadas",
             number: "500+",
             description: "Capoeiristas graduados ao longo de nossa história"
         },
         {
-            icon: <Users className="w-8 h-8 text-orange-600" />,
+            icon: <Users className="w-8 h-8 text-blue-600" />,
             title: "Vidas Transformadas",
             number: "1000+",
             description: "Pessoas impactadas por nossos projetos sociais"
         },
         {
-            icon: <Globe className="w-8 h-8 text-orange-600" />,
+            icon: <Globe className="w-8 h-8 text-blue-600" />,
             title: "Parcerias Internacionais",
             number: "12",
             description: "Grupos parceiros ao redor do mundo"
@@ -74,12 +74,12 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
     return (
         <div className="min-h-screen bg-white">
             {/* Header da página */}
-            <div className="bg-orange-600 text-white py-12">
+            <div className="bg-blue-600 text-white py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <Button
                         variant="ghost"
                         onClick={() => onSectionChange('home')}
-                        className="text-white hover:bg-orange-700 mb-6"
+                        className="text-white hover:bg-blue-700 mb-6"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Voltar ao Início
@@ -137,7 +137,7 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
                             <Card key={index} className="overflow-hidden">
                                 <CardContent className="p-0">
                                     <div className="flex">
-                                        <div className="bg-orange-600 text-white p-6 flex items-center justify-center min-w-[120px]">
+                                        <div className="bg-blue-600 text-white p-6 flex items-center justify-center min-w-[120px]">
                                             <span className="text-xl">{item.year}</span>
                                         </div>
                                         <div className="p-6 flex-1">
@@ -192,7 +192,7 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
             </section>
 
             {/* Conquistas */}
-            <section className="py-20 bg-orange-50">
+            <section className="py-20 bg-blue-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl mb-4">Nossas Conquistas</h2>
@@ -205,10 +205,10 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
                         {achievements.map((achievement, index) => (
                             <Card key={index} className="text-center">
                                 <CardHeader>
-                                    <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                                    <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                                         {achievement.icon}
                                     </div>
-                                    <CardTitle className="text-3xl text-orange-600 mb-2">
+                                    <CardTitle className="text-3xl text-blue-600 mb-2">
                                         {achievement.number}
                                     </CardTitle>
                                     <CardTitle className="text-lg">
@@ -225,7 +225,7 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
             </section>
 
             {/* Chamada para ação */}
-            <section className="py-20 bg-orange-600 text-white">
+            <section className="py-20 bg-blue-600 text-white">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h2 className="text-3xl md:text-4xl mb-6">Faça Parte Desta História</h2>
                     <p className="text-xl mb-8">
@@ -243,7 +243,7 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
                         <Button
                             size="lg"
                             variant="outline"
-                            className="border-white text-white hover:bg-white hover:text-orange-600"
+                            className="border-white text-black hover:bg-white hover:text-blue-600"
                         >
                             Entre em Contato
                         </Button>

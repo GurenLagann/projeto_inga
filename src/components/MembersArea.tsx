@@ -79,7 +79,7 @@ export function MembersArea() {
                     <Card>
                         <CardHeader className="text-center">
                             <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                                <Lock className="w-6 h-6 text-orange-600" />
+                                <Lock className="w-6 h-6 text-blue-600" />
                             </div>
                             <CardTitle>Área dos Membros</CardTitle>
                             <p className="text-gray-600">
@@ -113,7 +113,7 @@ export function MembersArea() {
                                     />
                                 </div>
 
-                                <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700">
+                                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
                                     Entrar
                                 </Button>
                             </form>
@@ -121,7 +121,7 @@ export function MembersArea() {
                             <div className="mt-6 text-center">
                                 <p className="text-sm text-gray-600">
                                     Não é membro ainda?{' '}
-                                    <a href="#contact" className="text-orange-600 hover:underline">
+                                    <a href="#contact" className="text-blue-600 hover:underline">
                                         Entre em contato
                                     </a>
                                 </p>
@@ -184,7 +184,7 @@ export function MembersArea() {
                                                     {course.duration}
                                                 </span>
                                             </div>
-                                            <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                                                 <Play className="w-3 h-3 mr-1" />
                                                 Assistir
                                             </Button>
@@ -201,7 +201,7 @@ export function MembersArea() {
                                 <Card key={academy.id}>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">
-                                            <MapPin className="w-5 h-5 text-orange-600" />
+                                            <MapPin className="w-5 h-5 text-blue-600" />
                                             {academy.name}
                                         </CardTitle>
                                     </CardHeader>
@@ -222,7 +222,7 @@ export function MembersArea() {
                                             <p className="text-sm text-gray-600">{academy.schedule}</p>
                                         </div>
 
-                                        <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                                        <Button className="w-full bg-blue-600 hover:bg-blue-700">
                                             Ver no Mapa
                                         </Button>
                                     </CardContent>

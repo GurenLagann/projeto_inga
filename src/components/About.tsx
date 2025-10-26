@@ -37,7 +37,7 @@ export function About({ onSectionChange }: AboutProps) {
 
                         <Button
                             onClick={() => onSectionChange('history')}
-                            className="bg-orange-600 hover:bg-orange-700"
+                            className="bg-blue-600 hover:bg-blue-700"
                         >
                             Leia Nossa História Completa
                         </Button>
@@ -47,21 +47,21 @@ export function About({ onSectionChange }: AboutProps) {
                 <div className="mt-16 grid md:grid-cols-3 gap-8">
                     <Card>
                         <CardContent className="p-6 text-center">
-                            <div className="text-3xl mb-2 text-orange-600">29+</div>
+                            <div className="text-3xl mb-2 text-blue-600">29+</div>
                             <p className="text-gray-600">Anos de tradição</p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardContent className="p-6 text-center">
-                            <div className="text-3xl mb-2 text-orange-600">200+</div>
+                            <div className="text-3xl mb-2 text-blue-600">200+</div>
                             <p className="text-gray-600">Membros ativos</p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardContent className="p-6 text-center">
-                            <div className="text-3xl mb-2 text-orange-600">5</div>
+                            <div className="text-3xl mb-2 text-blue-600">5</div>
                             <p className="text-gray-600">Cidades</p>
                         </CardContent>
                     </Card>
