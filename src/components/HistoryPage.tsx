@@ -11,7 +11,7 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
         {
             year: "1995",
             title: "Fundação do Grupo",
-            description: "Mestre João Silva funda o Grupo Capoeira Axé em São Paulo, começando com apenas 8 alunos em um pequeno espaço alugado no centro da cidade."
+            description: "Mestre Perna funda o Grupo Inga Capoeira em São Paulo, começando com apenas 8 alunos em um pequeno espaço alugado no centro da cidade."
         },
         {
             year: "1998",
@@ -96,26 +96,12 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid lg:grid-cols-2 gap-12 items-center">
                         <div>
-                            <h2 className="text-3xl mb-6">As Origens do Axé</h2>
+                            <h2 className="text-3xl mb-6">As Origens do Inga</h2>
                             <div className="space-y-4 text-gray-600">
                                 <p>
-                                    Em 1995, em um pequeno espaço no centro de São Paulo, nascia algo especial.
-                                    Mestre João Silva, vindo de Salvador com o coração cheio de tradição baiana,
-                                    reuniu os primeiros oito alunos que dariam vida ao que hoje conhecemos como
-                                    Grupo Capoeira Axé.
+                                    Pegar a Historia do Inga com Vava
                                 </p>
-                                <p>
-                                    O nome Axé não foi escolhido por acaso. Representa a energia vital,
-                                    a força ancestral que move a capoeira e conecta todos os capoeiristas
-                                    numa grande família. Desde o primeiro dia, nosso compromisso foi preservar
-                                    não apenas os movimentos, mas toda a filosofia e espiritualidade que
-                                    fazem da capoeira uma arte única no mundo.
-                                </p>
-                                <p>
-                                    O que começou como um sonho de oito pessoas se transformou numa comunidade
-                                    que hoje impacta centenas de vidas, mantendo viva uma das mais belas
-                                    expressões da cultura afro-brasileira.
-                                </p>
+
                             </div>
                         </div>
                     </div>

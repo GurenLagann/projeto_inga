@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
 import { Menu, X } from 'lucide-react';
 
@@ -11,6 +12,7 @@ interface HeaderProps {
 
 export function Header({ activeSection, onSectionChange }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const navItems = [
     { id: 'home', label: 'Início' },
@@ -18,6 +20,12 @@ export function Header({ activeSection, onSectionChange }: HeaderProps) {
     { id: 'events', label: 'Eventos' }, 
     { id: 'members', label: 'Área dos Membros' },
   ];
+
+  // Determinar seção ativa baseada no pathname
+  const getActiveSection = () => {
+    if (pathname === '/members') return 'members';
+    return activeSection;
+  };
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -29,19 +37,22 @@ export function Header({ activeSection, onSectionChange }: HeaderProps) {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onSectionChange(item.id)}
-                className={`transition-colors ${
-                  activeSection === item.id
-                    ? ' text-blue-700'
-                    : 'text-gray-600 hover:text-blue-700'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            {navItems.map((item) => {
+              const isActive = getActiveSection() === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSectionChange(item.id)}
+                  className={`transition-colors ${
+                    isActive
+                      ? ' text-blue-700'
+                      : 'text-gray-600 hover:text-blue-700'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </nav>
 
           {/* Mobile menu button */}
@@ -60,22 +71,25 @@ export function Header({ activeSection, onSectionChange }: HeaderProps) {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t">
             <nav className="flex flex-col space-y-2">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onSectionChange(item.id);
-                    setIsMenuOpen(false);
-                  }}
-                  className={`text-left px-2 py-2 transition-colors ${
-                    activeSection === item.id
-                      ? 'text-orange-600'
-                      : 'text-gray-600 hover:text-orange-600'
-                  }`}
-                > 
-                  {item.label}
-                </button>
-              ))}
+              {navItems.map((item) => {
+                const isActive = getActiveSection() === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      onSectionChange(item.id);
+                      setIsMenuOpen(false);
+                    }}
+                    className={`text-left px-2 py-2 transition-colors ${
+                      isActive
+                        ? 'text-orange-600'
+                        : 'text-gray-600 hover:text-orange-600'
+                    }`}
+                  > 
+                    {item.label}
+                  </button>
+                );
+              })}
             </nav>
           </div>
         )}

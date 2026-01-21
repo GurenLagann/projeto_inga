@@ -59,7 +59,7 @@ export function Footer() {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400">
-            &copy; 2025 Grupo Capoeira Axé. Todos os direitos reservados.
+            &copy; 2025 Grupo Inga Capoeira. Todos os direitos reservados.
           </p>
         </div>
       </div>

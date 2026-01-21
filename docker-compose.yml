@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: inga_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: inga_capoeira
+    ports:
+      - "5555:5432"
+    volumes:
+      - inga_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  inga_postgres_data:

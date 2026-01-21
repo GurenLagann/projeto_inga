@@ -11,7 +11,7 @@ export function Hero({ onSectionChange }: HeroProps) {
 
             <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
                 <h1 className="text-4xl md:text-6xl mb-6">
-                    Grupo Capoeira Axé
+                    Grupo Inga Capoeira
                 </h1>
                 <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto">
                     Preservando a tradição da capoeira através da arte, música e movimento.

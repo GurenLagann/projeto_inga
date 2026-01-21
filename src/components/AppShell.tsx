@@ -1,19 +1,25 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from './Header';
 import { Hero } from './Hero';
 import { About } from './About';
 import { Events } from './Events';
-import { MembersArea } from './MembersArea';
 import { Footer } from './Footer';
 import { HistoryPage } from './HistoryPage';
 
 export function AppShell() {
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState('home');
   const [currentPage, setCurrentPage] = useState('home');
 
   const handleSectionChange = (section: string) => {
+    if (section === 'members') {
+      router.push('/members');
+      return;
+    }
+
     if (section === 'history') {
       setCurrentPage('history');
       setActiveSection(section);
@@ -58,7 +64,6 @@ export function AppShell() {
         <Hero onSectionChange={handleSectionChange} />
         <About onSectionChange={handleSectionChange} />
         <Events />
-        <MembersArea />
       </main>
       <Footer />
     </div>
