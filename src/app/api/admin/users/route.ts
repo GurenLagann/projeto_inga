@@ -22,10 +22,15 @@ export async function GET() {
     }
 
     const result = await pool.query(
-      `SELECT id, name, email, corda, corda_color, group_name, academy,
-              instructor, joined_date, baptized_date, next_graduation, admin, created_at
-       FROM usuarios
-       ORDER BY created_at DESC`
+      `SELECT u.id, u.name, u.email, u.phone, u.admin, u.created_at,
+              m.id as membro_id, m.apelido,
+              g.nome as graduacao_nome, g.corda, g.cor_primaria, g.cor_secundaria,
+              a.name as academia_nome
+       FROM usuarios u
+       LEFT JOIN membros m ON m.usuario_id = u.id AND m.active = true
+       LEFT JOIN graduacoes g ON m.graduacao_id = g.id
+       LEFT JOIN academias a ON m.academia_id = a.id
+       ORDER BY u.created_at DESC`
     );
 
     return NextResponse.json({
@@ -33,16 +38,18 @@ export async function GET() {
         id: u.id,
         name: u.name,
         email: u.email,
-        corda: u.corda,
-        cordaColor: u.corda_color,
-        group: u.group_name,
-        academy: u.academy,
-        instructor: u.instructor,
-        joinedDate: u.joined_date,
-        baptizedDate: u.baptized_date,
-        nextGraduation: u.next_graduation,
+        phone: u.phone,
         admin: u.admin,
         createdAt: u.created_at,
+        membro: u.membro_id ? {
+          id: u.membro_id,
+          apelido: u.apelido,
+          graduacaoNome: u.graduacao_nome,
+          corda: u.corda,
+          corPrimaria: u.cor_primaria,
+          corSecundaria: u.cor_secundaria,
+          academiaNome: u.academia_nome,
+        } : null,
       })),
     });
   } catch (error) {

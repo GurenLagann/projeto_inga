@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 const horarioSchema = z.object({
   academiaId: z.number().int().positive(),
-  instructorId: z.number().int().positive().optional().nullable(),
+  membroInstrutorId: z.number().int().positive().optional().nullable(),
   dayOfWeek: z.number().int().min(0).max(6),
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Horário inválido'),
   endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Horário inválido'),
@@ -37,13 +37,15 @@ export async function GET(request: NextRequest) {
     const academiaId = searchParams.get('academiaId');
 
     let query = `
-      SELECT h.id, h.academia_id, h.instructor_id, h.day_of_week, h.start_time, h.end_time,
+      SELECT h.id, h.academia_id, h.membro_instrutor_id, h.day_of_week, h.start_time, h.end_time,
              h.class_type, h.description, h.active, h.created_at,
              a.name as academia_name,
-             u.name as instructor_name
+             m.apelido as instrutor_apelido,
+             u.name as instrutor_nome
       FROM horarios_aulas h
       JOIN academias a ON h.academia_id = a.id
-      LEFT JOIN usuarios u ON h.instructor_id = u.id
+      LEFT JOIN membros m ON h.membro_instrutor_id = m.id
+      LEFT JOIN usuarios u ON m.usuario_id = u.id
     `;
     const params: (string | number)[] = [];
 
@@ -61,8 +63,8 @@ export async function GET(request: NextRequest) {
         id: h.id,
         academiaId: h.academia_id,
         academiaName: h.academia_name,
-        instructorId: h.instructor_id,
-        instructorName: h.instructor_name,
+        membroInstrutorId: h.membro_instrutor_id,
+        instrutorNome: h.instrutor_apelido || h.instrutor_nome,
         dayOfWeek: h.day_of_week,
         startTime: h.start_time,
         endTime: h.end_time,
@@ -115,13 +117,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar se instrutor existe (se fornecido)
-    if (validatedData.instructorId) {
-      const instructorCheck = await pool.query(
-        'SELECT id FROM usuarios WHERE id = $1',
-        [validatedData.instructorId]
+    // Verificar se instrutor (membro) existe (se fornecido)
+    if (validatedData.membroInstrutorId) {
+      const instrutorCheck = await pool.query(
+        'SELECT id FROM membros WHERE id = $1 AND active = true',
+        [validatedData.membroInstrutorId]
       );
-      if (instructorCheck.rows.length === 0) {
+      if (instrutorCheck.rows.length === 0) {
         return NextResponse.json(
           { error: 'Instrutor não encontrado' },
           { status: 404 }
@@ -130,12 +132,12 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await pool.query(
-      `INSERT INTO horarios_aulas (academia_id, instructor_id, day_of_week, start_time, end_time, class_type, description, active)
+      `INSERT INTO horarios_aulas (academia_id, membro_instrutor_id, day_of_week, start_time, end_time, class_type, description, active)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, academia_id, instructor_id, day_of_week, start_time, end_time, class_type, description, active, created_at`,
+       RETURNING id, academia_id, membro_instrutor_id, day_of_week, start_time, end_time, class_type, description, active, created_at`,
       [
         validatedData.academiaId,
-        validatedData.instructorId || null,
+        validatedData.membroInstrutorId || null,
         validatedData.dayOfWeek,
         validatedData.startTime,
         validatedData.endTime,
@@ -151,7 +153,7 @@ export async function POST(request: NextRequest) {
       horario: {
         id: horario.id,
         academiaId: horario.academia_id,
-        instructorId: horario.instructor_id,
+        membroInstrutorId: horario.membro_instrutor_id,
         dayOfWeek: horario.day_of_week,
         startTime: horario.start_time,
         endTime: horario.end_time,
