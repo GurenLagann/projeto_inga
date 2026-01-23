@@ -78,15 +78,16 @@ export function HistoryPage({ onSectionChange }: HistoryPageProps) {
             description: "Com mais de 30 anos dedicados à capoeira, fundou o grupo em 1999 e lidera sua trajetória até hoje."
         },
         {
-            name: "C. Mestre Batata",
-            role: "Conselho Administrativo",
-            description: "Um dos membros mais antigos do grupo, faz parte do conselho que orienta os rumos da associação."
-        },
-        {
-            name: "C. Mestre Vavá",
+            name: "Mestre Vavá",
             role: "Conselho Administrativo",
             description: "Membro fundador do conselho, contribui com sua experiência para o desenvolvimento do grupo."
-        }
+        },
+        {
+            name: "C. Mestre Koala",
+            role: "Conselho Administrativo",
+            description: "Membro responsável pelo campeonato Bambas do Vale em Taubaté-SP e pela organização de eventos do grupo."
+        },
+       
     ];
 
     return (
