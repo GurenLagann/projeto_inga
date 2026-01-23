@@ -2,6 +2,45 @@
 
 ## Histórico de Alterações
 
+### [80039c5] feat: Atualiza seção Quem Somos com informações reais do Ingá
+**Data:** Janeiro 2026
+
+- Título alterado de "Sobre o Grupo" para "Quem Somos"
+- Descrição completa: fundação 22/01/1999, Mestre Perna
+- Inclui conselho administrativo: C.Mestre Batata e C.Mestre Vavá
+- Seção "Nossa Filosofia": amizade através da capoeira, evolução técnica
+- Estatísticas atualizadas: 25+ anos, 5 países, 2 CDs
+
+**Arquivo modificado:** `src/components/About.tsx`
+
+---
+
+### [6b06589] feat: Atualiza página Nossa História com conteúdo real do Ingá
+**Data:** Janeiro 2026
+
+#### Conteúdo Adicionado
+- **Fundação:** 22 de janeiro de 1999, sob direção do Mestre Perna
+- **Liderança:** Mestre Perna, C.Mestre Batata e C.Mestre Vavá
+- **Timeline:** 8 marcos históricos de 1997 a 2024
+- **Produções musicais:** CD Vol. I (2001) e Vol. II (2005)
+- **Presença internacional:** Israel, EUA, Espanha, Argentina
+- **Presença nacional:** SP, RJ, GO, MG, CE
+- **Filosofia:** Amizade, Evolução Técnica, Respeito às Raízes
+
+#### Seções da Página
+- Header com título e descrição
+- As Origens do Ingá (texto introdutório)
+- Nossa Liderança (cards dos mestres)
+- Linha do Tempo (8 marcos)
+- Produções Musicais (2 CDs)
+- Nossa Filosofia (3 pilares)
+- Nossas Conquistas (estatísticas)
+- Chamada para ação
+
+**Arquivo modificado:** `src/components/HistoryPage.tsx`
+
+---
+
 ### [57248cb] feat: Sistema completo de eventos com inscrições
 **Data:** Janeiro 2026
 
