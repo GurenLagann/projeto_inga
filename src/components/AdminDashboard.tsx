@@ -26,7 +26,12 @@ import {
   Search,
   Loader2,
   Save,
-  User
+  User,
+  CalendarDays,
+  Award,
+  GraduationCap,
+  Eye,
+  UserCheck
 } from 'lucide-react';
 import { Modal, ModalFooter } from './ui/modal';
 
@@ -80,13 +85,67 @@ interface Membro {
   apelido: string | null;
   usuarioId: number;
   usuarioNome: string;
+  usuarioEmail: string;
   displayName: string;
+  graduacaoId: number | null;
   graduacaoNome: string | null;
   corPrimaria: string | null;
   corSecundaria: string | null;
+  academiaId: number | null;
+  academiaNome: string | null;
 }
 
-type TabType = 'usuarios' | 'academias' | 'horarios';
+interface Evento {
+  id: number;
+  titulo: string;
+  descricao: string | null;
+  dataInicio: string;
+  dataFim: string | null;
+  horaInicio: string | null;
+  horaFim: string | null;
+  local: string | null;
+  tipo: string;
+  status: string;
+  maxParticipantes: number | null;
+  permiteInscricaoPublica: boolean;
+  valor: number | null;
+  academiaId: number | null;
+  academiaNome: string | null;
+  active: boolean;
+  totalInscritos: number;
+}
+
+interface Inscricao {
+  id: number;
+  eventoId: number;
+  membroId: number | null;
+  usuarioId: number | null;
+  nomeExterno: string | null;
+  emailExterno: string | null;
+  telefoneExterno: string | null;
+  status: string;
+  dataInscricao: string;
+  displayName: string;
+  displayEmail: string;
+  displayPhone: string;
+}
+
+interface DashboardStats {
+  totalAlunos: number;
+  totalMestres: number;
+  totalInstrutores: number;
+}
+
+interface Graduacao {
+  id: number;
+  nome: string;
+  corda: string;
+  corPrimaria: string;
+  corSecundaria: string | null;
+  ordem: number;
+}
+
+type TabType = 'usuarios' | 'academias' | 'horarios' | 'eventos';
 
 const DAYS_OF_WEEK = [
   'Domingo',
@@ -105,6 +164,11 @@ export function AdminDashboard() {
   const [academias, setAcademias] = useState<Academia[]>([]);
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [membros, setMembros] = useState<Membro[]>([]);
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [graduacoes, setGraduacoes] = useState<Graduacao[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [inscricoes, setInscricoes] = useState<Inscricao[]>([]);
+  const [selectedEvento, setSelectedEvento] = useState<Evento | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -113,8 +177,13 @@ export function AdminDashboard() {
   // Form states
   const [showAcademiaForm, setShowAcademiaForm] = useState(false);
   const [showHorarioForm, setShowHorarioForm] = useState(false);
+  const [showEventoForm, setShowEventoForm] = useState(false);
+  const [showInscricoesModal, setShowInscricoesModal] = useState(false);
+  const [showEditMemberModal, setShowEditMemberModal] = useState(false);
   const [editingAcademia, setEditingAcademia] = useState<Academia | null>(null);
   const [editingHorario, setEditingHorario] = useState<Horario | null>(null);
+  const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
+  const [editingMembro, setEditingMembro] = useState<Membro | null>(null);
   const [cepLoading, setCepLoading] = useState(false);
 
   // Academia form
@@ -145,6 +214,31 @@ export function AdminDashboard() {
     active: true,
   });
 
+  // Evento form
+  const [eventoForm, setEventoForm] = useState({
+    titulo: '',
+    descricao: '',
+    dataInicio: '',
+    dataFim: '',
+    horaInicio: '',
+    horaFim: '',
+    local: '',
+    tipo: 'geral',
+    status: 'confirmado',
+    maxParticipantes: '',
+    permiteInscricaoPublica: false,
+    valor: '',
+    academiaId: null as number | null,
+    active: true,
+  });
+
+  // Edit member form
+  const [membroForm, setMembroForm] = useState({
+    apelido: '',
+    graduacaoId: null as number | null,
+    academiaId: null as number | null,
+  });
+
   // Tipos de aula pré-definidos
   const CLASS_TYPES = [
     'Iniciantes',
@@ -159,6 +253,23 @@ export function AdminDashboard() {
     'Maculelê',
     'Puxada de Rede',
     'Samba de Roda',
+  ];
+
+  // Tipos de evento
+  const EVENT_TYPES = [
+    { value: 'geral', label: 'Geral' },
+    { value: 'roda', label: 'Roda' },
+    { value: 'batizado', label: 'Batizado' },
+    { value: 'workshop', label: 'Workshop' },
+    { value: 'treino', label: 'Treino' },
+  ];
+
+  // Status de evento
+  const EVENT_STATUS = [
+    { value: 'confirmado', label: 'Confirmado', color: 'bg-green-100 text-green-800' },
+    { value: 'inscricoes_abertas', label: 'Inscrições Abertas', color: 'bg-blue-100 text-blue-800' },
+    { value: 'vagas_limitadas', label: 'Vagas Limitadas', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'cancelado', label: 'Cancelado', color: 'bg-red-100 text-red-800' },
   ];
 
   const loadAcademias = useCallback(async () => {
@@ -194,6 +305,54 @@ export function AdminDashboard() {
       }
     } catch (err) {
       console.error('Erro ao carregar membros:', err);
+    }
+  }, []);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/stats');
+      const data = await res.json();
+      if (res.ok) {
+        setStats(data.stats);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar estatísticas:', err);
+    }
+  }, []);
+
+  const loadEventos = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/eventos');
+      const data = await res.json();
+      if (res.ok) {
+        setEventos(data.eventos);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar eventos:', err);
+    }
+  }, []);
+
+  const loadGraduacoes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/graduacoes');
+      const data = await res.json();
+      if (res.ok) {
+        setGraduacoes(data.graduacoes);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar graduações:', err);
+    }
+  }, []);
+
+  const loadInscricoes = useCallback(async (eventoId: number) => {
+    try {
+      const res = await fetch(`/api/admin/eventos/inscricoes?eventoId=${eventoId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setInscricoes(data.inscricoes);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar inscrições:', err);
     }
   }, []);
 
@@ -257,9 +416,14 @@ export function AdminDashboard() {
 
         setIsAdmin(true);
         setUsers(usersData.users);
-        await loadAcademias();
-        await loadHorarios();
-        await loadMembros();
+        await Promise.all([
+          loadAcademias(),
+          loadHorarios(),
+          loadMembros(),
+          loadStats(),
+          loadEventos(),
+          loadGraduacoes(),
+        ]);
       } catch (err) {
         console.error('Erro:', err);
         setError('Erro ao carregar dados');
@@ -269,7 +433,7 @@ export function AdminDashboard() {
     };
 
     checkAdminAndLoadData();
-  }, [router, loadAcademias, loadHorarios, loadMembros]);
+  }, [router, loadAcademias, loadHorarios, loadMembros, loadStats, loadEventos, loadGraduacoes]);
 
   const toggleAdmin = async (userId: number, currentAdmin: number) => {
     setActionLoading(userId);
@@ -519,6 +683,211 @@ export function AdminDashboard() {
     });
   };
 
+  // Evento CRUD
+  const handleEventoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionLoading(-1);
+
+    try {
+      const method = editingEvento ? 'PUT' : 'POST';
+      const body = {
+        ...(editingEvento && { id: editingEvento.id }),
+        titulo: eventoForm.titulo,
+        descricao: eventoForm.descricao || null,
+        dataInicio: eventoForm.dataInicio,
+        dataFim: eventoForm.dataFim || null,
+        horaInicio: eventoForm.horaInicio || null,
+        horaFim: eventoForm.horaFim || null,
+        local: eventoForm.local || null,
+        tipo: eventoForm.tipo,
+        status: eventoForm.status,
+        maxParticipantes: eventoForm.maxParticipantes ? parseInt(eventoForm.maxParticipantes) : null,
+        permiteInscricaoPublica: eventoForm.permiteInscricaoPublica,
+        valor: eventoForm.valor ? parseFloat(eventoForm.valor) : null,
+        academiaId: eventoForm.academiaId,
+        active: eventoForm.active,
+      };
+
+      const res = await fetch('/api/admin/eventos', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Erro ao salvar evento');
+        return;
+      }
+
+      await loadEventos();
+      resetEventoForm();
+    } catch (err) {
+      console.error('Erro:', err);
+      alert('Erro ao salvar evento');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const editEvento = (evento: Evento) => {
+    setEditingEvento(evento);
+    setEventoForm({
+      titulo: evento.titulo,
+      descricao: evento.descricao || '',
+      dataInicio: evento.dataInicio?.split('T')[0] || '',
+      dataFim: evento.dataFim?.split('T')[0] || '',
+      horaInicio: evento.horaInicio?.substring(0, 5) || '',
+      horaFim: evento.horaFim?.substring(0, 5) || '',
+      local: evento.local || '',
+      tipo: evento.tipo,
+      status: evento.status,
+      maxParticipantes: evento.maxParticipantes?.toString() || '',
+      permiteInscricaoPublica: evento.permiteInscricaoPublica,
+      valor: evento.valor?.toString() || '',
+      academiaId: evento.academiaId,
+      active: evento.active,
+    });
+    setShowEventoForm(true);
+  };
+
+  const deleteEvento = async (id: number, titulo: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o evento "${titulo}"? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setActionLoading(id);
+    try {
+      const res = await fetch(`/api/admin/eventos?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Erro ao excluir evento');
+        return;
+      }
+
+      await loadEventos();
+    } catch (err) {
+      console.error('Erro:', err);
+      alert('Erro ao excluir evento');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const resetEventoForm = () => {
+    setShowEventoForm(false);
+    setEditingEvento(null);
+    setEventoForm({
+      titulo: '',
+      descricao: '',
+      dataInicio: '',
+      dataFim: '',
+      horaInicio: '',
+      horaFim: '',
+      local: '',
+      tipo: 'geral',
+      status: 'confirmado',
+      maxParticipantes: '',
+      permiteInscricaoPublica: false,
+      valor: '',
+      academiaId: null,
+      active: true,
+    });
+  };
+
+  const openInscricoes = async (evento: Evento) => {
+    setSelectedEvento(evento);
+    await loadInscricoes(evento.id);
+    setShowInscricoesModal(true);
+  };
+
+  const updateInscricaoStatus = async (inscricaoId: number, newStatus: string) => {
+    try {
+      const res = await fetch('/api/admin/eventos/inscricoes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: inscricaoId, status: newStatus }),
+      });
+
+      if (res.ok && selectedEvento) {
+        await loadInscricoes(selectedEvento.id);
+        await loadEventos();
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar status:', err);
+    }
+  };
+
+  const deleteInscricao = async (inscricaoId: number) => {
+    if (!confirm('Tem certeza que deseja remover esta inscrição?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/eventos/inscricoes?id=${inscricaoId}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok && selectedEvento) {
+        await loadInscricoes(selectedEvento.id);
+        await loadEventos();
+      }
+    } catch (err) {
+      console.error('Erro ao remover inscrição:', err);
+    }
+  };
+
+  // Edit Member
+  const openEditMember = (membro: Membro) => {
+    setEditingMembro(membro);
+    setMembroForm({
+      apelido: membro.apelido || '',
+      graduacaoId: membro.graduacaoId,
+      academiaId: membro.academiaId,
+    });
+    setShowEditMemberModal(true);
+  };
+
+  const handleMembroSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMembro) return;
+
+    setActionLoading(-1);
+    try {
+      const res = await fetch('/api/admin/membros', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingMembro.id,
+          apelido: membroForm.apelido || null,
+          graduacaoId: membroForm.graduacaoId,
+          academiaId: membroForm.academiaId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Erro ao atualizar membro');
+        return;
+      }
+
+      await loadMembros();
+      setShowEditMemberModal(false);
+      setEditingMembro(null);
+    } catch (err) {
+      console.error('Erro:', err);
+      alert('Erro ao atualizar membro');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
@@ -610,21 +979,56 @@ export function AdminDashboard() {
             <Clock className="w-4 h-4 inline mr-2" />
             Horários
           </button>
+          <button
+            onClick={() => setActiveTab('eventos')}
+            className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+              activeTab === 'eventos'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <CalendarDays className="w-4 h-4 inline mr-2" />
+            Eventos
+          </button>
         </div>
 
         {/* Users Tab */}
         {activeTab === 'usuarios' && (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600">Total de Usuários</p>
-                      <p className="text-3xl font-bold text-gray-900">{users.length}</p>
+                      <p className="text-sm text-gray-600">Total de Alunos</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats?.totalAlunos || 0}</p>
                     </div>
                     <Users className="w-10 h-10 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Mestres</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats?.totalMestres || 0}</p>
+                    </div>
+                    <Award className="w-10 h-10 text-amber-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Instrutores</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats?.totalInstrutores || 0}</p>
+                    </div>
+                    <GraduationCap className="w-10 h-10 text-green-600" />
                   </div>
                 </CardContent>
               </Card>
@@ -638,21 +1042,7 @@ export function AdminDashboard() {
                         {users.filter(u => u.admin === 1).length}
                       </p>
                     </div>
-                    <Shield className="w-10 h-10 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Usuários Comuns</p>
-                      <p className="text-3xl font-bold text-gray-900">
-                        {users.filter(u => u.admin === 0).length}
-                      </p>
-                    </div>
-                    <Users className="w-10 h-10 text-gray-400" />
+                    <Shield className="w-10 h-10 text-purple-600" />
                   </div>
                 </CardContent>
               </Card>
@@ -729,6 +1119,22 @@ export function AdminDashboard() {
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex justify-end gap-2">
+                              {(() => {
+                                const membro = membros.find(m => m.usuarioId === user.id);
+                                if (membro) {
+                                  return (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => openEditMember(membro)}
+                                      title="Editar membro"
+                                    >
+                                      <Edit2 className="w-4 h-4" />
+                                    </Button>
+                                  );
+                                }
+                                return null;
+                              })()}
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1377,6 +1783,542 @@ export function AdminDashboard() {
                 </CardContent>
               </Card>
             )}
+          </>
+        )}
+
+        {/* Eventos Tab */}
+        {activeTab === 'eventos' && (
+          <>
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-4">
+                <Card className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <CalendarDays className="w-8 h-8 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-gray-600">Total de Eventos</p>
+                      <p className="text-2xl font-bold text-gray-900">{eventos.length}</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+              <Button
+                onClick={() => {
+                  resetEventoForm();
+                  setShowEventoForm(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Evento
+              </Button>
+            </div>
+
+            {/* Modal de Evento */}
+            <Modal
+              isOpen={showEventoForm}
+              onClose={resetEventoForm}
+              title={editingEvento ? 'Editar Evento' : 'Novo Evento'}
+              description="Preencha as informações do evento"
+              size="lg"
+            >
+              <form onSubmit={handleEventoSubmit} className="space-y-6">
+                <div>
+                  <Label htmlFor="eventoTitulo" className="text-sm font-medium text-gray-700">
+                    Título *
+                  </Label>
+                  <Input
+                    id="eventoTitulo"
+                    value={eventoForm.titulo}
+                    onChange={(e) => setEventoForm({ ...eventoForm, titulo: e.target.value })}
+                    placeholder="Nome do evento"
+                    className="mt-2 h-11"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="eventoDescricao" className="text-sm font-medium text-gray-700">
+                    Descrição
+                  </Label>
+                  <textarea
+                    id="eventoDescricao"
+                    value={eventoForm.descricao}
+                    onChange={(e) => setEventoForm({ ...eventoForm, descricao: e.target.value })}
+                    className="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                    rows={3}
+                    placeholder="Descrição do evento..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="eventoDataInicio" className="text-sm font-medium text-gray-700">
+                      Data de Início *
+                    </Label>
+                    <Input
+                      id="eventoDataInicio"
+                      type="date"
+                      value={eventoForm.dataInicio}
+                      onChange={(e) => setEventoForm({ ...eventoForm, dataInicio: e.target.value })}
+                      className="mt-2 h-11"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="eventoDataFim" className="text-sm font-medium text-gray-700">
+                      Data de Término
+                    </Label>
+                    <Input
+                      id="eventoDataFim"
+                      type="date"
+                      value={eventoForm.dataFim}
+                      onChange={(e) => setEventoForm({ ...eventoForm, dataFim: e.target.value })}
+                      className="mt-2 h-11"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="eventoHoraInicio" className="text-sm font-medium text-gray-700">
+                      Hora de Início
+                    </Label>
+                    <Input
+                      id="eventoHoraInicio"
+                      type="time"
+                      value={eventoForm.horaInicio}
+                      onChange={(e) => setEventoForm({ ...eventoForm, horaInicio: e.target.value })}
+                      className="mt-2 h-11"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="eventoHoraFim" className="text-sm font-medium text-gray-700">
+                      Hora de Término
+                    </Label>
+                    <Input
+                      id="eventoHoraFim"
+                      type="time"
+                      value={eventoForm.horaFim}
+                      onChange={(e) => setEventoForm({ ...eventoForm, horaFim: e.target.value })}
+                      className="mt-2 h-11"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="eventoLocal" className="text-sm font-medium text-gray-700">
+                    Local
+                  </Label>
+                  <Input
+                    id="eventoLocal"
+                    value={eventoForm.local}
+                    onChange={(e) => setEventoForm({ ...eventoForm, local: e.target.value })}
+                    placeholder="Endereço ou nome do local"
+                    className="mt-2 h-11"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Tipo</Label>
+                    <select
+                      value={eventoForm.tipo}
+                      onChange={(e) => setEventoForm({ ...eventoForm, tipo: e.target.value })}
+                      className="w-full h-11 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {EVENT_TYPES.map((type) => (
+                        <option key={type.value} value={type.value}>{type.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">Status</Label>
+                    <select
+                      value={eventoForm.status}
+                      onChange={(e) => setEventoForm({ ...eventoForm, status: e.target.value })}
+                      className="w-full h-11 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {EVENT_STATUS.map((status) => (
+                        <option key={status.value} value={status.value}>{status.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="eventoMaxParticipantes" className="text-sm font-medium text-gray-700">
+                      Máx. Participantes
+                    </Label>
+                    <Input
+                      id="eventoMaxParticipantes"
+                      type="number"
+                      value={eventoForm.maxParticipantes}
+                      onChange={(e) => setEventoForm({ ...eventoForm, maxParticipantes: e.target.value })}
+                      placeholder="Deixe vazio para ilimitado"
+                      className="mt-2 h-11"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="eventoValor" className="text-sm font-medium text-gray-700">
+                      Valor (R$)
+                    </Label>
+                    <Input
+                      id="eventoValor"
+                      type="number"
+                      step="0.01"
+                      value={eventoForm.valor}
+                      onChange={(e) => setEventoForm({ ...eventoForm, valor: e.target.value })}
+                      placeholder="0.00 para gratuito"
+                      className="mt-2 h-11"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Academia (opcional)</Label>
+                  <select
+                    value={eventoForm.academiaId || ''}
+                    onChange={(e) => setEventoForm({ ...eventoForm, academiaId: e.target.value ? parseInt(e.target.value) : null })}
+                    className="w-full h-11 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Nenhuma academia vinculada</option>
+                    {academias.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="eventoInscricaoPublica"
+                      checked={eventoForm.permiteInscricaoPublica}
+                      onChange={(e) => setEventoForm({ ...eventoForm, permiteInscricaoPublica: e.target.checked })}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <Label htmlFor="eventoInscricaoPublica" className="cursor-pointer">
+                      Permitir inscrição sem login
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="eventoActive"
+                      checked={eventoForm.active}
+                      onChange={(e) => setEventoForm({ ...eventoForm, active: e.target.checked })}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <Label htmlFor="eventoActive" className="cursor-pointer">
+                      Evento Ativo
+                    </Label>
+                  </div>
+                </div>
+
+                <ModalFooter>
+                  <Button type="button" variant="outline" onClick={resetEventoForm} className="px-6">
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={actionLoading === -1}
+                    className="px-6 bg-blue-600 hover:bg-blue-700"
+                  >
+                    {actionLoading === -1 ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        {editingEvento ? 'Atualizar' : 'Criar Evento'}
+                      </>
+                    )}
+                  </Button>
+                </ModalFooter>
+              </form>
+            </Modal>
+
+            {/* Modal de Inscrições */}
+            <Modal
+              isOpen={showInscricoesModal}
+              onClose={() => {
+                setShowInscricoesModal(false);
+                setSelectedEvento(null);
+                setInscricoes([]);
+              }}
+              title={`Inscrições - ${selectedEvento?.titulo}`}
+              description={`${inscricoes.length} inscrito(s)`}
+              size="lg"
+            >
+              <div className="space-y-4">
+                {inscricoes.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">Nenhuma inscrição encontrada</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-3 px-4 font-medium text-gray-600">Nome</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-600">Contato</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                          <th className="text-right py-3 px-4 font-medium text-gray-600">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inscricoes.map((inscricao) => (
+                          <tr key={inscricao.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-4 px-4">
+                              <div>
+                                <p className="font-medium text-gray-900">{inscricao.displayName}</p>
+                                {inscricao.membroId && (
+                                  <Badge variant="secondary" className="text-xs mt-1">Membro</Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <p className="text-sm text-gray-600">{inscricao.displayEmail}</p>
+                              <p className="text-sm text-gray-500">{inscricao.displayPhone}</p>
+                            </td>
+                            <td className="py-4 px-4">
+                              <select
+                                value={inscricao.status}
+                                onChange={(e) => updateInscricaoStatus(inscricao.id, e.target.value)}
+                                className="text-sm px-2 py-1 rounded border border-gray-300"
+                              >
+                                <option value="pendente">Pendente</option>
+                                <option value="confirmada">Confirmada</option>
+                                <option value="presente">Presente</option>
+                                <option value="cancelada">Cancelada</option>
+                              </select>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => deleteInscricao(inscricao.id)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </Modal>
+
+            {/* Edit Member Modal */}
+            <Modal
+              isOpen={showEditMemberModal}
+              onClose={() => {
+                setShowEditMemberModal(false);
+                setEditingMembro(null);
+              }}
+              title="Editar Membro"
+              description={editingMembro ? `Editando: ${editingMembro.displayName}` : ''}
+              size="md"
+            >
+              <form onSubmit={handleMembroSubmit} className="space-y-6">
+                <div>
+                  <Label htmlFor="membroApelido" className="text-sm font-medium text-gray-700">
+                    Apelido (Nome de Capoeira)
+                  </Label>
+                  <Input
+                    id="membroApelido"
+                    value={membroForm.apelido}
+                    onChange={(e) => setMembroForm({ ...membroForm, apelido: e.target.value })}
+                    placeholder="Ex: Mestre Bimba"
+                    className="mt-2 h-11"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Graduação</Label>
+                  <select
+                    value={membroForm.graduacaoId || ''}
+                    onChange={(e) => setMembroForm({ ...membroForm, graduacaoId: e.target.value ? parseInt(e.target.value) : null })}
+                    className="w-full h-11 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Sem graduação</option>
+                    {graduacoes.map((g) => (
+                      <option key={g.id} value={g.id}>{g.nome} - {g.corda}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Academia</Label>
+                  <select
+                    value={membroForm.academiaId || ''}
+                    onChange={(e) => setMembroForm({ ...membroForm, academiaId: e.target.value ? parseInt(e.target.value) : null })}
+                    className="w-full h-11 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Nenhuma academia</option>
+                    {academias.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <ModalFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowEditMemberModal(false);
+                      setEditingMembro(null);
+                    }}
+                    className="px-6"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={actionLoading === -1}
+                    className="px-6 bg-blue-600 hover:bg-blue-700"
+                  >
+                    {actionLoading === -1 ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Salvar
+                      </>
+                    )}
+                  </Button>
+                </ModalFooter>
+              </form>
+            </Modal>
+
+            {/* Lista de Eventos */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="w-5 h-5" />
+                  Lista de Eventos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Evento</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Data</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Local</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Tipo</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600">Inscritos</th>
+                        <th className="text-right py-3 px-4 font-medium text-gray-600">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {eventos.map((evento) => {
+                        const statusInfo = EVENT_STATUS.find(s => s.value === evento.status);
+                        const tipoInfo = EVENT_TYPES.find(t => t.value === evento.tipo);
+                        return (
+                          <tr key={evento.id} className={`border-b border-gray-100 hover:bg-gray-50 ${!evento.active ? 'opacity-50' : ''}`}>
+                            <td className="py-4 px-4">
+                              <div>
+                                <p className="font-medium text-gray-900">{evento.titulo}</p>
+                                {evento.valor !== null && evento.valor > 0 && (
+                                  <p className="text-sm text-green-600">R$ {evento.valor.toFixed(2)}</p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="text-sm">
+                                <p className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(evento.dataInicio).toLocaleDateString('pt-BR')}
+                                </p>
+                                {evento.horaInicio && (
+                                  <p className="flex items-center gap-1 text-gray-500">
+                                    <Clock className="w-3 h-3" />
+                                    {evento.horaInicio.substring(0, 5)}
+                                    {evento.horaFim && ` - ${evento.horaFim.substring(0, 5)}`}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className="text-sm text-gray-600">
+                                {evento.local || evento.academiaNome || '-'}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4">
+                              <Badge variant="secondary">{tipoInfo?.label || evento.tipo}</Badge>
+                            </td>
+                            <td className="py-4 px-4">
+                              <Badge className={statusInfo?.color || ''}>{statusInfo?.label || evento.status}</Badge>
+                            </td>
+                            <td className="py-4 px-4">
+                              <button
+                                onClick={() => openInscricoes(evento)}
+                                className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                                <span className="font-medium">{evento.totalInscritos}</span>
+                                {evento.maxParticipantes && (
+                                  <span className="text-gray-400">/ {evento.maxParticipantes}</span>
+                                )}
+                              </button>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openInscricoes(evento)}
+                                  title="Ver inscritos"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => editEvento(evento)}
+                                  title="Editar evento"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => deleteEvento(evento.id, evento.titulo)}
+                                  disabled={actionLoading === evento.id}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  title="Excluir evento"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {eventos.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      Nenhum evento cadastrado. Clique em &quot;Novo Evento&quot; para adicionar.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </>
         )}
       </div>

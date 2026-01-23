@@ -63,3 +63,47 @@ export interface Student {
   instructor: string;
   nextGraduation?: string;
 }
+
+// Evento do grupo
+export interface Evento {
+  id: number;
+  titulo: string;
+  descricao: string | null;
+  dataInicio: string;
+  dataFim: string | null;
+  horaInicio: string | null;
+  horaFim: string | null;
+  local: string | null;
+  tipo: 'roda' | 'batizado' | 'workshop' | 'treino' | 'geral';
+  status: 'confirmado' | 'vagas_limitadas' | 'inscricoes_abertas' | 'cancelado';
+  maxParticipantes: number | null;
+  permiteInscricaoPublica: boolean;
+  valor: number | null;
+  academiaId: number | null;
+  academiaNome?: string | null;
+  totalInscritos?: number;
+  active?: boolean;
+}
+
+// Inscrição em evento
+export interface InscricaoEvento {
+  id: number;
+  eventoId: number;
+  membroId: number | null;
+  usuarioId: number | null;
+  nomeExterno: string | null;
+  emailExterno: string | null;
+  telefoneExterno: string | null;
+  status: 'pendente' | 'confirmada' | 'cancelada' | 'presente';
+  dataInscricao: string;
+  // Dados relacionados
+  membroNome?: string | null;
+  usuarioNome?: string | null;
+}
+
+// Estatísticas do dashboard admin
+export interface DashboardStats {
+  totalAlunos: number;
+  totalMestres: number;
+  totalInstrutores: number;
+}

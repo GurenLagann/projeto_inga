@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { getSessionUser } from '@/lib/session';
 
@@ -65,6 +65,87 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Erro ao listar membros:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Atualizar dados do membro
+export async function PUT(request: NextRequest) {
+  try {
+    const user = await getSessionUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Não autorizado' },
+        { status: 401 }
+      );
+    }
+
+    if (user.admin !== 1) {
+      return NextResponse.json(
+        { error: 'Acesso negado. Apenas administradores.' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const {
+      id,
+      apelido,
+      graduacaoId,
+      academiaId,
+      mestreId,
+      dataEntrada,
+      dataBatizado,
+      active,
+    } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID do membro é obrigatório' },
+        { status: 400 }
+      );
+    }
+
+    const result = await pool.query(
+      `UPDATE membros SET
+        apelido = COALESCE($1, apelido),
+        graduacao_id = $2,
+        academia_id = $3,
+        mestre_id = $4,
+        data_entrada = $5,
+        data_batizado = $6,
+        active = COALESCE($7, active)
+      WHERE id = $8
+      RETURNING *`,
+      [
+        apelido,
+        graduacaoId || null,
+        academiaId || null,
+        mestreId || null,
+        dataEntrada || null,
+        dataBatizado || null,
+        active,
+        id,
+      ]
+    );
+
+    if (result.rowCount === 0) {
+      return NextResponse.json(
+        { error: 'Membro não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      message: 'Membro atualizado com sucesso',
+      membro: result.rows[0],
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar membro:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

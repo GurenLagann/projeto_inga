@@ -7,10 +7,10 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Label } from './ui/label';
-import { Play, MapPin, User, Video, Map, Shield } from 'lucide-react';
+import { Play, MapPin, User, Video, Map, Shield, CalendarDays, Calendar, Clock, Loader2, Check, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getCourses, getAcademies } from '@/lib/members-data';
-import { Course, Academy, User as UserType, Membro } from '@/types/members';
+import { Course, Academy, User as UserType, Membro, Evento } from '@/types/members';
 import { LoginForm } from './LoginForm';
 import { StudentProfile } from './StudentProfile';
 
@@ -21,10 +21,13 @@ export function MembersArea() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [academies, setAcademies] = useState<Academy[]>([]);
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [minhasInscricoes, setMinhasInscricoes] = useState<Set<number>>(new Set());
   const [user, setUser] = useState<UserType | null>(null);
   const [membro, setMembro] = useState<Membro | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inscricaoLoading, setInscricaoLoading] = useState<number | null>(null);
 
   // Verificar sessão ao carregar
   useEffect(() => {
@@ -70,6 +73,30 @@ export function MembersArea() {
         console.error('Erro ao buscar dados do aluno:', err);
       }
 
+      // Buscar eventos
+      try {
+        const eventosRes = await fetch('/api/eventos');
+        if (eventosRes.ok) {
+          const eventosData = await eventosRes.json();
+          setEventos(eventosData.eventos);
+
+          // Verificar inscrições do usuário
+          const inscricoesSet = new Set<number>();
+          for (const evento of eventosData.eventos) {
+            const inscricaoRes = await fetch(`/api/eventos/inscricao?eventoId=${evento.id}`);
+            if (inscricaoRes.ok) {
+              const inscricaoData = await inscricaoRes.json();
+              if (inscricaoData.inscrito && inscricaoData.inscricao?.status !== 'cancelada') {
+                inscricoesSet.add(evento.id);
+              }
+            }
+          }
+          setMinhasInscricoes(inscricoesSet);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar eventos:', err);
+      }
+
       setCourses(coursesData);
       setAcademies(academiesData);
     } catch (err) {
@@ -103,8 +130,76 @@ export function MembersArea() {
     setIsAdmin(false);
     setCourses([]);
     setAcademies([]);
+    setEventos([]);
+    setMinhasInscricoes(new Set());
     setUser(null);
     setMembro(null);
+  };
+
+  const handleInscreverEvento = async (eventoId: number) => {
+    setInscricaoLoading(eventoId);
+    try {
+      const res = await fetch('/api/eventos/inscricao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventoId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Erro ao realizar inscrição');
+        return;
+      }
+
+      setMinhasInscricoes(prev => new Set([...prev, eventoId]));
+      // Recarregar eventos para atualizar contador
+      const eventosRes = await fetch('/api/eventos');
+      if (eventosRes.ok) {
+        const eventosData = await eventosRes.json();
+        setEventos(eventosData.eventos);
+      }
+    } catch {
+      alert('Erro ao realizar inscrição. Tente novamente.');
+    } finally {
+      setInscricaoLoading(null);
+    }
+  };
+
+  const handleCancelarInscricao = async (eventoId: number) => {
+    if (!confirm('Tem certeza que deseja cancelar sua inscrição?')) {
+      return;
+    }
+
+    setInscricaoLoading(eventoId);
+    try {
+      const res = await fetch(`/api/eventos/inscricao?eventoId=${eventoId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Erro ao cancelar inscrição');
+        return;
+      }
+
+      setMinhasInscricoes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(eventoId);
+        return newSet;
+      });
+      // Recarregar eventos para atualizar contador
+      const eventosRes = await fetch('/api/eventos');
+      if (eventosRes.ok) {
+        const eventosData = await eventosRes.json();
+        setEventos(eventosData.eventos);
+      }
+    } catch {
+      alert('Erro ao cancelar inscrição. Tente novamente.');
+    } finally {
+      setInscricaoLoading(null);
+    }
   };
 
   const handleProfileUpdate = (updatedUser: UserType, updatedMembro: Membro | null) => {
@@ -168,10 +263,14 @@ export function MembersArea() {
           </div>
         ) : (
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-8">
+            <TabsList className="grid w-full max-w-3xl grid-cols-4 mb-8">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
                 Meu Perfil
+              </TabsTrigger>
+              <TabsTrigger value="events" className="flex items-center gap-2">
+                <CalendarDays className="w-4 h-4" />
+                Eventos
               </TabsTrigger>
               <TabsTrigger value="courses" className="flex items-center gap-2">
                 <Video className="w-4 h-4" />
@@ -179,7 +278,7 @@ export function MembersArea() {
               </TabsTrigger>
               <TabsTrigger value="academies" className="flex items-center gap-2">
                 <Map className="w-4 h-4" />
-                Localização das Academias
+                Academias
               </TabsTrigger>
             </TabsList>
 
@@ -193,6 +292,126 @@ export function MembersArea() {
               ) : (
                 <div className="text-center py-12">
                   <p className="text-gray-600">Carregando informações...</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="events" className="mt-8">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Próximos Eventos</h3>
+                <p className="text-gray-600">Confira os eventos e inscreva-se!</p>
+              </div>
+
+              {eventos.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-gray-500">
+                    Nenhum evento programado no momento. Fique de olho para novidades!
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {eventos.map((evento) => {
+                    const isInscrito = minhasInscricoes.has(evento.id);
+                    const isLoadingEvento = inscricaoLoading === evento.id;
+
+                    return (
+                      <Card key={evento.id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-lg mb-2">{evento.titulo}</CardTitle>
+                              <Badge variant="secondary" className="mb-2">
+                                {evento.tipo === 'roda' ? 'Roda' :
+                                 evento.tipo === 'batizado' ? 'Batizado' :
+                                 evento.tipo === 'workshop' ? 'Workshop' :
+                                 evento.tipo === 'treino' ? 'Treino' : 'Evento'}
+                              </Badge>
+                            </div>
+                            {isInscrito && (
+                              <Badge className="bg-green-100 text-green-800">
+                                <Check className="w-3 h-3 mr-1" />
+                                Inscrito
+                              </Badge>
+                            )}
+                          </div>
+                        </CardHeader>
+
+                        <CardContent>
+                          {evento.descricao && (
+                            <p className="text-gray-600 mb-4">{evento.descricao}</p>
+                          )}
+
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center text-sm text-gray-500">
+                              <Calendar className="w-4 h-4 mr-2" />
+                              {new Date(evento.dataInicio).toLocaleDateString('pt-BR', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              })}
+                            </div>
+                            {evento.horaInicio && (
+                              <div className="flex items-center text-sm text-gray-500">
+                                <Clock className="w-4 h-4 mr-2" />
+                                {evento.horaInicio.substring(0, 5)}
+                                {evento.horaFim && ` - ${evento.horaFim.substring(0, 5)}`}
+                              </div>
+                            )}
+                            {(evento.local || evento.academiaNome) && (
+                              <div className="flex items-center text-sm text-gray-500">
+                                <MapPin className="w-4 h-4 mr-2" />
+                                {evento.local || evento.academiaNome}
+                              </div>
+                            )}
+                          </div>
+
+                          {evento.maxParticipantes && (
+                            <p className="text-sm text-gray-500 mb-4">
+                              {evento.totalInscritos || 0} / {evento.maxParticipantes} inscritos
+                            </p>
+                          )}
+
+                          {isInscrito ? (
+                            <Button
+                              variant="outline"
+                              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleCancelarInscricao(evento.id)}
+                              disabled={isLoadingEvento}
+                            >
+                              {isLoadingEvento ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Cancelando...
+                                </>
+                              ) : (
+                                <>
+                                  <X className="w-4 h-4 mr-2" />
+                                  Cancelar Inscrição
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <Button
+                              className="w-full bg-blue-600 hover:bg-blue-700"
+                              onClick={() => handleInscreverEvento(evento.id)}
+                              disabled={isLoadingEvento || evento.status === 'cancelado'}
+                            >
+                              {isLoadingEvento ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Inscrevendo...
+                                </>
+                              ) : evento.valor && evento.valor > 0 ? (
+                                `Inscrever-se - R$ ${evento.valor.toFixed(2)}`
+                              ) : (
+                                'Inscrever-se'
+                              )}
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>

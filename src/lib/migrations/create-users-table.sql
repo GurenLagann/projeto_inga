@@ -201,3 +201,62 @@ VALUES
   ('Vermelha-Branca', 'Vermelha-Branca', '#DC2626', '#FFFFFF', 16, 'Contra-Mestre'),
   ('Branca', 'Branca', '#FFFFFF', NULL, 17, 'Mestre')
 ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- TABELA: EVENTOS
+-- Eventos do grupo (rodas, batizados, workshops, etc)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS eventos (
+  id SERIAL PRIMARY KEY,
+  titulo VARCHAR(255) NOT NULL,
+  descricao TEXT,
+  data_inicio DATE NOT NULL,
+  data_fim DATE,
+  hora_inicio TIME,
+  hora_fim TIME,
+  local VARCHAR(500),
+  tipo VARCHAR(50) DEFAULT 'geral',
+  status VARCHAR(30) DEFAULT 'confirmado',
+  max_participantes INTEGER,
+  permite_inscricao_publica BOOLEAN DEFAULT false,
+  valor DECIMAL(10,2),
+  academia_id INTEGER REFERENCES academias(id) ON DELETE SET NULL,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_eventos_data_inicio ON eventos(data_inicio);
+CREATE INDEX IF NOT EXISTS idx_eventos_tipo ON eventos(tipo);
+CREATE INDEX IF NOT EXISTS idx_eventos_status ON eventos(status);
+CREATE INDEX IF NOT EXISTS idx_eventos_active ON eventos(active);
+CREATE INDEX IF NOT EXISTS idx_eventos_academia ON eventos(academia_id);
+
+DROP TRIGGER IF EXISTS update_eventos_updated_at ON eventos;
+CREATE TRIGGER update_eventos_updated_at
+    BEFORE UPDATE ON eventos
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- TABELA: INSCRICOES_EVENTOS
+-- Inscrições em eventos (membros ou externos)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS inscricoes_eventos (
+  id SERIAL PRIMARY KEY,
+  evento_id INTEGER NOT NULL REFERENCES eventos(id) ON DELETE CASCADE,
+  membro_id INTEGER REFERENCES membros(id) ON DELETE CASCADE,
+  usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  nome_externo VARCHAR(255),
+  email_externo VARCHAR(255),
+  telefone_externo VARCHAR(30),
+  status VARCHAR(30) DEFAULT 'confirmada',
+  data_inscricao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(evento_id, membro_id),
+  UNIQUE(evento_id, email_externo)
+);
+
+CREATE INDEX IF NOT EXISTS idx_inscricoes_evento ON inscricoes_eventos(evento_id);
+CREATE INDEX IF NOT EXISTS idx_inscricoes_membro ON inscricoes_eventos(membro_id);
+CREATE INDEX IF NOT EXISTS idx_inscricoes_usuario ON inscricoes_eventos(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_inscricoes_status ON inscricoes_eventos(status);
