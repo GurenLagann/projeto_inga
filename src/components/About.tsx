@@ -106,10 +106,10 @@ export function About({ onSectionChange }: AboutProps) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div ref={headerRef} className="text-center mb-16" style={{ opacity: 0 }}>
                     <h2 className="text-3xl md:text-4xl mb-4 font-bold text-gray-900">
-                        Sobre o Grupo
+                        Quem Somos
                     </h2>
                     <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                        Conheça um pouco da nossa trajetória e nosso compromisso com a tradição
+                        Desde 1999 preservando e compartilhando a tradição da capoeira pelo Brasil e pelo mundo
                     </p>
                 </div>
 
@@ -118,16 +118,20 @@ export function About({ onSectionChange }: AboutProps) {
                         <div style={{ opacity: 0 }}>
                             <h3 className="text-xl mb-3 font-semibold text-gray-900">Quem Somos</h3>
                             <p className="text-gray-600">
-                                Notas sobre o Inga Capoeira.
+                                A <strong>Associação Ingá Capoeira</strong> foi fundada em <strong>22 de janeiro de 1999</strong>,
+                                sob a direção do <strong>Mestre Perna</strong>, que já contava com vasta experiência no mundo
+                                da capoeira. Hoje, o grupo conta com um conselho administrativo formado pelos membros mais
+                                antigos: <strong>Contra-Mestre Batata</strong> e <strong>Contra-Mestre Vavá</strong>.
                             </p>
                         </div>
 
                         <div style={{ opacity: 0 }}>
-                            <h3 className="text-xl mb-3 font-semibold text-gray-900">Nossa Missão</h3>
+                            <h3 className="text-xl mb-3 font-semibold text-gray-900">Nossa Filosofia</h3>
                             <p className="text-gray-600">
-                                Formamos capoeiristas completos através dos três pilares fundamentais:
-                                luta, dança e música. Mais que uma arte marcial, a capoeira é uma
-                                ferramenta de transformação social e preservação cultural.
+                                Desde sua fundação, o grupo segue a filosofia de <strong>fazer amizades através da capoeira</strong>,
+                                buscando constantemente a <strong>evolução técnica, pedagógica, cultural e esportiva</strong>.
+                                Mais que uma arte marcial, a capoeira é uma ferramenta de transformação social e preservação
+                                das raízes culturais brasileiras.
                             </p>
                         </div>
 
@@ -144,22 +148,22 @@ export function About({ onSectionChange }: AboutProps) {
                 <div ref={cardsRef} className="mt-16 grid md:grid-cols-3 gap-8">
                     <Card className="hover:shadow-xl transition-shadow duration-300 cursor-default" style={{ opacity: 0 }}>
                         <CardContent className="p-6 text-center">
-                            <div className="stat-number text-4xl font-bold mb-2 text-blue-600">29+</div>
+                            <div className="stat-number text-4xl font-bold mb-2 text-blue-600">25+</div>
                             <p className="text-gray-600">Anos de tradição</p>
                         </CardContent>
                     </Card>
 
                     <Card className="hover:shadow-xl transition-shadow duration-300 cursor-default" style={{ opacity: 0 }}>
                         <CardContent className="p-6 text-center">
-                            <div className="stat-number text-4xl font-bold mb-2 text-blue-600">200+</div>
-                            <p className="text-gray-600">Membros ativos</p>
+                            <div className="stat-number text-4xl font-bold mb-2 text-blue-600">5</div>
+                            <p className="text-gray-600">Países alcançados</p>
                         </CardContent>
                     </Card>
 
                     <Card className="hover:shadow-xl transition-shadow duration-300 cursor-default" style={{ opacity: 0 }}>
                         <CardContent className="p-6 text-center">
-                            <div className="stat-number text-4xl font-bold mb-2 text-blue-600">5</div>
-                            <p className="text-gray-600">Cidades</p>
+                            <div className="stat-number text-4xl font-bold mb-2 text-blue-600">2</div>
+                            <p className="text-gray-600">CDs lançados</p>
                         </CardContent>
                     </Card>
                 </div>
