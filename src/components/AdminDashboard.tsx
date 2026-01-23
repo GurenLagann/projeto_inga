@@ -24,8 +24,11 @@ import {
   Building2,
   Phone,
   Search,
-  Loader2
+  Loader2,
+  Save,
+  User
 } from 'lucide-react';
+import { Modal, ModalFooter } from './ui/modal';
 
 interface User {
   id: number;
@@ -61,8 +64,8 @@ interface Horario {
   id: number;
   academiaId: number;
   academiaName: string;
-  instructorId: number | null;
-  instructorName: string | null;
+  membroInstrutorId: number | null;
+  instrutorNome: string | null;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
@@ -70,6 +73,17 @@ interface Horario {
   description: string | null;
   active: boolean;
   createdAt: string;
+}
+
+interface Membro {
+  id: number;
+  apelido: string | null;
+  usuarioId: number;
+  usuarioNome: string;
+  displayName: string;
+  graduacaoNome: string | null;
+  corPrimaria: string | null;
+  corSecundaria: string | null;
 }
 
 type TabType = 'usuarios' | 'academias' | 'horarios';
@@ -90,6 +104,7 @@ export function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [academias, setAcademias] = useState<Academia[]>([]);
   const [horarios, setHorarios] = useState<Horario[]>([]);
+  const [membros, setMembros] = useState<Membro[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -121,7 +136,7 @@ export function AdminDashboard() {
   // Horario form
   const [horarioForm, setHorarioForm] = useState({
     academiaId: 0,
-    instructorId: null as number | null,
+    membroInstrutorId: null as number | null,
     dayOfWeek: 1,
     startTime: '19:00',
     endTime: '21:00',
@@ -129,6 +144,22 @@ export function AdminDashboard() {
     description: '',
     active: true,
   });
+
+  // Tipos de aula pré-definidos
+  const CLASS_TYPES = [
+    'Iniciantes',
+    'Intermediário',
+    'Avançado',
+    'Kids (4-7 anos)',
+    'Infantil (8-12 anos)',
+    'Juvenil',
+    'Adulto',
+    'Roda',
+    'Música',
+    'Maculelê',
+    'Puxada de Rede',
+    'Samba de Roda',
+  ];
 
   const loadAcademias = useCallback(async () => {
     try {
@@ -151,6 +182,18 @@ export function AdminDashboard() {
       }
     } catch (err) {
       console.error('Erro ao carregar horários:', err);
+    }
+  }, []);
+
+  const loadMembros = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/membros');
+      const data = await res.json();
+      if (res.ok) {
+        setMembros(data.membros);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar membros:', err);
     }
   }, []);
 
@@ -216,6 +259,7 @@ export function AdminDashboard() {
         setUsers(usersData.users);
         await loadAcademias();
         await loadHorarios();
+        await loadMembros();
       } catch (err) {
         console.error('Erro:', err);
         setError('Erro ao carregar dados');
@@ -225,7 +269,7 @@ export function AdminDashboard() {
     };
 
     checkAdminAndLoadData();
-  }, [router, loadAcademias, loadHorarios]);
+  }, [router, loadAcademias, loadHorarios, loadMembros]);
 
   const toggleAdmin = async (userId: number, currentAdmin: number) => {
     setActionLoading(userId);
@@ -422,7 +466,7 @@ export function AdminDashboard() {
     setEditingHorario(horario);
     setHorarioForm({
       academiaId: horario.academiaId,
-      instructorId: horario.instructorId,
+      membroInstrutorId: horario.membroInstrutorId,
       dayOfWeek: horario.dayOfWeek,
       startTime: horario.startTime.substring(0, 5),
       endTime: horario.endTime.substring(0, 5),
@@ -465,7 +509,7 @@ export function AdminDashboard() {
     setEditingHorario(null);
     setHorarioForm({
       academiaId: academias[0]?.id || 0,
-      instructorId: null,
+      membroInstrutorId: null,
       dayOfWeek: 1,
       startTime: '19:00',
       endTime: '21:00',
@@ -1026,132 +1070,214 @@ export function AdminDashboard() {
               </Button>
             </div>
 
-            {/* Horario Form Modal */}
-            {showHorarioForm && (
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{editingHorario ? 'Editar Horário' : 'Novo Horário'}</span>
-                    <Button variant="ghost" size="sm" onClick={resetHorarioForm}>
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleHorarioSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="horarioAcademia">Academia *</Label>
-                        <select
-                          id="horarioAcademia"
-                          value={horarioForm.academiaId}
-                          onChange={(e) => setHorarioForm({ ...horarioForm, academiaId: parseInt(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          required
-                        >
-                          {academias.map((a) => (
-                            <option key={a.id} value={a.id}>{a.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <Label htmlFor="horarioInstructor">Professor</Label>
-                        <select
-                          id="horarioInstructor"
-                          value={horarioForm.instructorId || ''}
-                          onChange={(e) => setHorarioForm({ ...horarioForm, instructorId: e.target.value ? parseInt(e.target.value) : null })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">Selecione um professor</option>
-                          {users.map((u) => (
-                            <option key={u.id} value={u.id}>{u.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+            {/* Modal de Horário - Novo Design */}
+            <Modal
+              isOpen={showHorarioForm}
+              onClose={resetHorarioForm}
+              title={editingHorario ? 'Editar Horário' : 'Novo Horário de Aula'}
+              description="Preencha as informações do horário de aula"
+              size="lg"
+            >
+              <form onSubmit={handleHorarioSubmit} className="space-y-6">
+                {/* Academia */}
+                <div>
+                  <Label htmlFor="horarioAcademia" className="text-sm font-medium text-gray-700">
+                    Academia *
+                  </Label>
+                  <select
+                    id="horarioAcademia"
+                    value={horarioForm.academiaId}
+                    onChange={(e) => setHorarioForm({ ...horarioForm, academiaId: parseInt(e.target.value) })}
+                    className="mt-2 w-full h-11 px-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    required
+                  >
+                    {academias.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name} - {a.city}</option>
+                    ))}
+                  </select>
+                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="dayOfWeek">Dia da Semana *</Label>
-                        <select
-                          id="dayOfWeek"
-                          value={horarioForm.dayOfWeek}
-                          onChange={(e) => setHorarioForm({ ...horarioForm, dayOfWeek: parseInt(e.target.value) })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          required
-                        >
-                          {DAYS_OF_WEEK.map((day, index) => (
-                            <option key={index} value={index}>{day}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <Label htmlFor="startTime">Início *</Label>
-                        <Input
-                          id="startTime"
-                          type="time"
-                          value={horarioForm.startTime}
-                          onChange={(e) => setHorarioForm({ ...horarioForm, startTime: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="endTime">Término *</Label>
-                        <Input
-                          id="endTime"
-                          type="time"
-                          value={horarioForm.endTime}
-                          onChange={(e) => setHorarioForm({ ...horarioForm, endTime: e.target.value })}
-                          required
-                        />
-                      </div>
-                    </div>
+                {/* Dia da Semana - Seleção Visual */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Dia da Semana *
+                  </Label>
+                  <div className="grid grid-cols-7 gap-2">
+                    {DAYS_OF_WEEK.map((day, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setHorarioForm({ ...horarioForm, dayOfWeek: index })}
+                        className={`py-3 px-2 rounded-lg text-sm font-medium transition-all ${
+                          horarioForm.dayOfWeek === index
+                            ? 'bg-blue-600 text-white shadow-md scale-105'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        <span className="hidden sm:inline">{day.substring(0, 3)}</span>
+                        <span className="sm:hidden">{day.substring(0, 1)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="classType">Tipo de Aula</Label>
-                        <Input
-                          id="classType"
-                          value={horarioForm.classType}
-                          onChange={(e) => setHorarioForm({ ...horarioForm, classType: e.target.value })}
-                          placeholder="Ex: Iniciantes, Avançados, Kids"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2 pt-6">
-                        <input
-                          type="checkbox"
-                          id="horarioActive"
-                          checked={horarioForm.active}
-                          onChange={(e) => setHorarioForm({ ...horarioForm, active: e.target.checked })}
-                          className="w-4 h-4"
-                        />
-                        <Label htmlFor="horarioActive">Horário Ativo</Label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="horarioDescription">Observações</Label>
-                      <textarea
-                        id="horarioDescription"
-                        value={horarioForm.description}
-                        onChange={(e) => setHorarioForm({ ...horarioForm, description: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows={2}
+                {/* Horários */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="startTime" className="text-sm font-medium text-gray-700">
+                      Hora de Início *
+                    </Label>
+                    <div className="mt-2 relative">
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={horarioForm.startTime}
+                        onChange={(e) => setHorarioForm({ ...horarioForm, startTime: e.target.value })}
+                        className="pl-10 h-11"
+                        required
                       />
                     </div>
-
-                    <div className="flex gap-2">
-                      <Button type="submit" disabled={actionLoading === -1} className="bg-blue-600 hover:bg-blue-700">
-                        {actionLoading === -1 ? 'Salvando...' : 'Salvar'}
-                      </Button>
-                      <Button type="button" variant="outline" onClick={resetHorarioForm}>
-                        Cancelar
-                      </Button>
+                  </div>
+                  <div>
+                    <Label htmlFor="endTime" className="text-sm font-medium text-gray-700">
+                      Hora de Término *
+                    </Label>
+                    <div className="mt-2 relative">
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="endTime"
+                        type="time"
+                        value={horarioForm.endTime}
+                        onChange={(e) => setHorarioForm({ ...horarioForm, endTime: e.target.value })}
+                        className="pl-10 h-11"
+                        required
+                      />
                     </div>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
+                  </div>
+                </div>
+
+                {/* Tipo de Aula - Chips Selecionáveis */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Tipo de Aula
+                  </Label>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {CLASS_TYPES.map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setHorarioForm({ ...horarioForm, classType: type })}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                          horarioForm.classType === type
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                  <Input
+                    value={horarioForm.classType}
+                    onChange={(e) => setHorarioForm({ ...horarioForm, classType: e.target.value })}
+                    placeholder="Ou digite um tipo personalizado..."
+                    className="h-11"
+                  />
+                </div>
+
+                {/* Instrutor */}
+                <div>
+                  <Label htmlFor="horarioInstrutor" className="text-sm font-medium text-gray-700">
+                    Professor/Instrutor
+                  </Label>
+                  <div className="mt-2 relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <select
+                      id="horarioInstrutor"
+                      value={horarioForm.membroInstrutorId || ''}
+                      onChange={(e) => setHorarioForm({ ...horarioForm, membroInstrutorId: e.target.value ? parseInt(e.target.value) : null })}
+                      className="w-full h-11 pl-10 pr-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    >
+                      <option value="">Selecione um instrutor (opcional)</option>
+                      {membros.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.displayName} {m.graduacaoNome ? `(${m.graduacaoNome})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {membros.length === 0 && (
+                    <p className="mt-2 text-sm text-amber-600">
+                      Nenhum membro cadastrado. Cadastre membros para selecionar instrutores.
+                    </p>
+                  )}
+                </div>
+
+                {/* Observações */}
+                <div>
+                  <Label htmlFor="horarioDescription" className="text-sm font-medium text-gray-700">
+                    Observações
+                  </Label>
+                  <textarea
+                    id="horarioDescription"
+                    value={horarioForm.description}
+                    onChange={(e) => setHorarioForm({ ...horarioForm, description: e.target.value })}
+                    className="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                    rows={3}
+                    placeholder="Informações adicionais sobre a aula..."
+                  />
+                </div>
+
+                {/* Status */}
+                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="horarioActive"
+                    checked={horarioForm.active}
+                    onChange={(e) => setHorarioForm({ ...horarioForm, active: e.target.checked })}
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div>
+                    <Label htmlFor="horarioActive" className="font-medium text-gray-900 cursor-pointer">
+                      Horário Ativo
+                    </Label>
+                    <p className="text-sm text-gray-500">
+                      Horários inativos não aparecem para os membros
+                    </p>
+                  </div>
+                </div>
+
+                {/* Footer com botões */}
+                <ModalFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetHorarioForm}
+                    className="px-6"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={actionLoading === -1}
+                    className="px-6 bg-blue-600 hover:bg-blue-700"
+                  >
+                    {actionLoading === -1 ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        {editingHorario ? 'Atualizar' : 'Criar Horário'}
+                      </>
+                    )}
+                  </Button>
+                </ModalFooter>
+              </form>
+            </Modal>
 
             {/* Horarios grouped by Academia */}
             {academias.map((academia) => {
@@ -1197,7 +1323,7 @@ export function AdminDashboard() {
                               </td>
                               <td className="py-4 px-4">
                                 <span className="text-sm text-gray-600">
-                                  {horario.instructorName || '-'}
+                                  {horario.instrutorNome || '-'}
                                 </span>
                               </td>
                               <td className="py-4 px-4">

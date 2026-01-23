@@ -10,7 +10,7 @@ import { Label } from './ui/label';
 import { Play, MapPin, User, Video, Map, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getCourses, getAcademies } from '@/lib/members-data';
-import { Course, Academy, Student } from '@/types/members';
+import { Course, Academy, User as UserType, Membro } from '@/types/members';
 import { LoginForm } from './LoginForm';
 import { StudentProfile } from './StudentProfile';
 
@@ -21,7 +21,8 @@ export function MembersArea() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [academies, setAcademies] = useState<Academy[]>([]);
-  const [student, setStudent] = useState<Student | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
+  const [membro, setMembro] = useState<Membro | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,19 +37,8 @@ export function MembersArea() {
       const data = await response.json();
 
       if (data.authenticated && data.user) {
-        setStudent({
-          id: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
-          corda: data.user.corda || 'Não definida',
-          cordaColor: data.user.cordaColor || '#22c55e',
-          group: data.user.group || 'Grupo Inga Capoeira',
-          academy: data.user.academy || 'Não definida',
-          instructor: data.user.instructor || 'Não definido',
-          joinedDate: data.user.joinedDate || '',
-          baptizedDate: data.user.baptizedDate || undefined,
-          nextGraduation: data.user.nextGraduation || undefined,
-        });
+        setUser(data.user);
+        setMembro(data.membro || null);
         setIsAdmin(data.user.admin === 1);
         setIsLoggedIn(true);
       }
@@ -68,24 +58,13 @@ export function MembersArea() {
         getAcademies()
       ]);
 
-      // Buscar dados do aluno da API (usa sessão, não precisa de ID)
+      // Buscar dados atualizados do aluno
       try {
         const response = await fetch('/api/student');
         if (response.ok) {
-          const studentInfo = await response.json();
-          setStudent({
-            id: studentInfo.id,
-            name: studentInfo.name,
-            email: studentInfo.email,
-            corda: studentInfo.corda || 'Não definida',
-            cordaColor: studentInfo.cordaColor || '#22c55e',
-            group: studentInfo.group || 'Grupo Inga Capoeira',
-            academy: studentInfo.academy || 'Não definida',
-            instructor: studentInfo.instructor || 'Não definido',
-            joinedDate: studentInfo.joinedDate || '',
-            baptizedDate: studentInfo.baptizedDate || undefined,
-            nextGraduation: studentInfo.nextGraduation || undefined,
-          });
+          const data = await response.json();
+          setUser(data.user);
+          setMembro(data.membro || null);
         }
       } catch (err) {
         console.error('Erro ao buscar dados do aluno:', err);
@@ -110,6 +89,7 @@ export function MembersArea() {
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
+    checkSession(); // Recarregar dados da sessão
   };
 
   const handleLogout = async () => {
@@ -123,7 +103,13 @@ export function MembersArea() {
     setIsAdmin(false);
     setCourses([]);
     setAcademies([]);
-    setStudent(null);
+    setUser(null);
+    setMembro(null);
+  };
+
+  const handleProfileUpdate = (updatedUser: UserType, updatedMembro: Membro | null) => {
+    setUser(updatedUser);
+    setMembro(updatedMembro);
   };
 
   // Mostra loading enquanto verifica sessão
@@ -146,7 +132,7 @@ export function MembersArea() {
           <div>
             <h2 className="text-3xl md:text-4xl mb-2 font-bold text-gray-900">Área dos Membros</h2>
             <p className="text-gray-600">
-              Bem-vindo de volta! Acesse seus conteúdos exclusivos.
+              Bem-vindo de volta, {user?.name || 'visitante'}! Acesse seus conteúdos exclusivos.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -198,11 +184,15 @@ export function MembersArea() {
             </TabsList>
 
             <TabsContent value="profile" className="mt-8">
-              {student ? (
-                <StudentProfile student={student} onUpdate={setStudent} />
+              {user ? (
+                <StudentProfile
+                  user={user}
+                  membro={membro}
+                  onUpdate={handleProfileUpdate}
+                />
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-600">Carregando informações do aluno...</p>
+                  <p className="text-gray-600">Carregando informações...</p>
                 </div>
               )}
             </TabsContent>

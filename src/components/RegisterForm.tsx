@@ -1,78 +1,89 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
-// Cores de corda disponíveis na capoeira
-const CORD_COLORS = [
-  { name: 'Crua (Iniciante)', color: '#F5F5DC' },
-  { name: 'Crua-Amarela', color: '#F5F5DC', secondary: '#FFD700' },
-  { name: 'Amarela', color: '#FFD700' },
-  { name: 'Amarela-Laranja', color: '#FFD700', secondary: '#FFA500' },
-  { name: 'Laranja', color: '#FFA500' },
-  { name: 'Laranja-Azul', color: '#FFA500', secondary: '#1E90FF' },
-  { name: 'Azul', color: '#1E90FF' },
-  { name: 'Azul-Verde', color: '#1E90FF', secondary: '#22C55E' },
-  { name: 'Verde', color: '#22C55E' },
-  { name: 'Verde-Roxa', color: '#22C55E', secondary: '#8B5CF6' },
-  { name: 'Roxa', color: '#8B5CF6' },
-  { name: 'Roxa-Marrom', color: '#8B5CF6', secondary: '#8B4513' },
-  { name: 'Marrom', color: '#8B4513' },
-  { name: 'Vermelha', color: '#DC2626' },
-  { name: 'Branca', color: '#FFFFFF' },
-];
+interface Graduacao {
+  id: number;
+  nome: string;
+  corda: string;
+  corPrimaria: string;
+  corSecundaria: string | null;
+  ordem: number;
+}
+
+interface Academia {
+  id: number;
+  name: string;
+  city: string;
+  neighborhood: string | null;
+}
 
 export function RegisterForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [isExistingStudent, setIsExistingStudent] = useState(false);
+  const [isMembro, setIsMembro] = useState(false);
+  const [graduacoes, setGraduacoes] = useState<Graduacao[]>([]);
+  const [academias, setAcademias] = useState<Academia[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    groupName: '',
-    instructor: '',
-    corda: '',
-    cordaColor: ''
+    phone: '',
+    apelido: '',
+    graduacaoId: '',
+    academiaId: ''
   });
+
+  // Buscar graduações e academias ao carregar
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [gradRes, acadRes] = await Promise.all([
+          fetch('/api/graduacoes'),
+          fetch('/api/academias')
+        ]);
+
+        if (gradRes.ok) {
+          const gradData = await gradRes.json();
+          setGraduacoes(gradData.graduacoes || []);
+        }
+
+        if (acadRes.ok) {
+          const acadData = await acadRes.json();
+          setAcademias(acadData.academias || []);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      }
+    }
+    fetchData();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
-    // Se mudar a corda, atualizar também a cor
-    if (name === 'corda') {
-      const selectedCord = CORD_COLORS.find(c => c.name === value);
-      setFormData({
-        ...formData,
-        corda: value,
-        cordaColor: selectedCord?.color || ''
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-    }
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
     setError('');
   };
 
-  const handleStudentToggle = (isStudent: boolean) => {
-    setIsExistingStudent(isStudent);
-    if (!isStudent) {
-      // Limpar campos de aluno se não for aluno existente
+  const handleMembroToggle = (isMember: boolean) => {
+    setIsMembro(isMember);
+    if (!isMember) {
       setFormData({
         ...formData,
-        groupName: '',
-        instructor: '',
-        corda: '',
-        cordaColor: ''
+        apelido: '',
+        graduacaoId: '',
+        academiaId: ''
       });
     }
   };
@@ -95,23 +106,6 @@ export function RegisterForm() {
       return;
     }
 
-    // Validar complexidade da senha
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/;
-    if (!passwordRegex.test(formData.password)) {
-      setError('A senha deve conter: letra maiúscula, minúscula, número e caractere especial (@$!%*?&)');
-      setLoading(false);
-      return;
-    }
-
-    // Validar campos de aluno existente
-    if (isExistingStudent) {
-      if (!formData.groupName || !formData.instructor || !formData.corda) {
-        setError('Preencha todos os campos de informação do aluno');
-        setLoading(false);
-        return;
-      }
-    }
-
     try {
       const response = await fetch('/api/register', {
         method: 'POST',
@@ -122,12 +116,12 @@ export function RegisterForm() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          isExistingStudent,
-          ...(isExistingStudent && {
-            groupName: formData.groupName,
-            instructor: formData.instructor,
-            corda: formData.corda,
-            cordaColor: formData.cordaColor
+          phone: formData.phone || undefined,
+          isMembro,
+          ...(isMembro && {
+            apelido: formData.apelido || undefined,
+            graduacaoId: formData.graduacaoId ? parseInt(formData.graduacaoId) : undefined,
+            academiaId: formData.academiaId ? parseInt(formData.academiaId) : undefined,
           })
         }),
       });
@@ -142,7 +136,7 @@ export function RegisterForm() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push('/members');
+        router.push('/login');
       }, 2000);
     } catch (err) {
       console.error('Erro ao cadastrar:', err);
@@ -150,6 +144,9 @@ export function RegisterForm() {
       setLoading(false);
     }
   };
+
+  // Encontrar graduação selecionada para mostrar preview da corda
+  const selectedGraduacao = graduacoes.find(g => g.id === parseInt(formData.graduacaoId));
 
   if (success) {
     return (
@@ -177,7 +174,7 @@ export function RegisterForm() {
               Cadastro realizado com sucesso!
             </h3>
             <p className="text-sm text-gray-600">
-              Redirecionando para a área de membros...
+              Redirecionando para o login...
             </p>
           </CardContent>
         </Card>
@@ -190,7 +187,7 @@ export function RegisterForm() {
       <Card className="w-full max-w-2xl shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl text-center text-blue-600">
-            Cadastro de Membro
+            Cadastro
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -232,6 +229,19 @@ export function RegisterForm() {
               </div>
 
               <div>
+                <Label htmlFor="phone">Telefone</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="(11) 99999-9999"
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="password">Senha *</Label>
                 <Input
                   id="password"
@@ -244,12 +254,9 @@ export function RegisterForm() {
                   className="mt-2"
                   minLength={8}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Deve conter: maiúscula, minúscula, número e caractere especial
-                </p>
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <Label htmlFor="confirmPassword">Confirmar Senha *</Label>
                 <Input
                   id="confirmPassword"
@@ -268,14 +275,14 @@ export function RegisterForm() {
             {/* Pergunta se já é aluno */}
             <div className="border-t pt-6">
               <Label className="text-base font-medium text-gray-900">
-                Você já é aluno de capoeira?
+                Você já é aluno do Grupo Inga Capoeira?
               </Label>
               <div className="mt-3 flex gap-4">
                 <button
                   type="button"
-                  onClick={() => handleStudentToggle(true)}
+                  onClick={() => handleMembroToggle(true)}
                   className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
-                    isExistingStudent
+                    isMembro
                       ? 'border-blue-600 bg-blue-50 text-blue-700'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
@@ -284,20 +291,25 @@ export function RegisterForm() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleStudentToggle(false)}
+                  onClick={() => handleMembroToggle(false)}
                   className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
-                    !isExistingStudent
+                    !isMembro
                       ? 'border-blue-600 bg-blue-50 text-blue-700'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <span className="font-medium">Não, quero começar</span>
+                  <span className="font-medium">Não / Sou responsável</span>
                 </button>
               </div>
+              <p className="mt-2 text-sm text-gray-500">
+                {isMembro
+                  ? 'Preencha suas informações de aluno abaixo.'
+                  : 'Você poderá acessar a área de membros como visitante ou responsável por alunos.'}
+              </p>
             </div>
 
-            {/* Campos adicionais para alunos existentes */}
-            {isExistingStudent && (
+            {/* Campos adicionais para membros */}
+            {isMembro && (
               <div className="border-t pt-6 space-y-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   Informações do Aluno
@@ -305,59 +317,73 @@ export function RegisterForm() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="groupName">Nome do Grupo *</Label>
+                    <Label htmlFor="apelido">Apelido na Capoeira</Label>
                     <Input
-                      id="groupName"
-                      name="groupName"
+                      id="apelido"
+                      name="apelido"
                       type="text"
-                      value={formData.groupName}
+                      value={formData.apelido}
                       onChange={handleChange}
-                      placeholder="Ex: Grupo Inga Capoeira"
-                      required={isExistingStudent}
+                      placeholder="Ex: Trovão, Pantera..."
                       className="mt-2"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="instructor">Mestre/Instrutor *</Label>
-                    <Input
-                      id="instructor"
-                      name="instructor"
-                      type="text"
-                      value={formData.instructor}
+                    <Label htmlFor="academiaId">Academia</Label>
+                    <select
+                      id="academiaId"
+                      name="academiaId"
+                      value={formData.academiaId}
                       onChange={handleChange}
-                      placeholder="Ex: Mestre Bimba"
-                      required={isExistingStudent}
-                      className="mt-2"
-                    />
+                      className="mt-2 w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Selecione sua academia</option>
+                      {academias.map((academia) => (
+                        <option key={academia.id} value={academia.id}>
+                          {academia.name} {academia.neighborhood ? `- ${academia.neighborhood}` : ''} ({academia.city})
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="md:col-span-2">
-                    <Label htmlFor="corda">Cor da Corda *</Label>
+                    <Label htmlFor="graduacaoId">Graduação Atual</Label>
                     <select
-                      id="corda"
-                      name="corda"
-                      value={formData.corda}
+                      id="graduacaoId"
+                      name="graduacaoId"
+                      value={formData.graduacaoId}
                       onChange={handleChange}
-                      required={isExistingStudent}
                       className="mt-2 w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="">Selecione sua corda</option>
-                      {CORD_COLORS.map((cord) => (
-                        <option key={cord.name} value={cord.name}>
-                          {cord.name}
+                      <option value="">Selecione sua graduação</option>
+                      {graduacoes.map((grad) => (
+                        <option key={grad.id} value={grad.id}>
+                          {grad.nome} ({grad.corda})
                         </option>
                       ))}
                     </select>
 
-                    {/* Preview da cor selecionada */}
-                    {formData.cordaColor && (
+                    {/* Preview da cor da corda */}
+                    {selectedGraduacao && (
                       <div className="mt-3 flex items-center gap-3">
                         <span className="text-sm text-gray-600">Cor da corda:</span>
                         <div
-                          className="w-20 h-6 rounded border border-gray-300 shadow-sm"
-                          style={{ backgroundColor: formData.cordaColor }}
-                        />
+                          className="w-20 h-6 rounded border border-gray-300 shadow-sm flex"
+                          style={{ overflow: 'hidden' }}
+                        >
+                          <div
+                            className="flex-1"
+                            style={{ backgroundColor: selectedGraduacao.corPrimaria }}
+                          />
+                          {selectedGraduacao.corSecundaria && (
+                            <div
+                              className="flex-1"
+                              style={{ backgroundColor: selectedGraduacao.corSecundaria }}
+                            />
+                          )}
+                        </div>
+                        <span className="text-sm text-gray-500">{selectedGraduacao.corda}</span>
                       </div>
                     )}
                   </div>
@@ -369,10 +395,10 @@ export function RegisterForm() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push('/members')}
+                onClick={() => router.push('/login')}
                 className="flex-1"
               >
-                Cancelar
+                Já tenho conta
               </Button>
               <Button
                 type="submit"

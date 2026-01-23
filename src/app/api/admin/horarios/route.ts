@@ -221,13 +221,13 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Verificar se instrutor existe (se fornecido)
-    if (validatedData.instructorId) {
-      const instructorCheck = await pool.query(
-        'SELECT id FROM usuarios WHERE id = $1',
-        [validatedData.instructorId]
+    // Verificar se instrutor (membro) existe (se fornecido)
+    if (validatedData.membroInstrutorId) {
+      const instrutorCheck = await pool.query(
+        'SELECT id FROM membros WHERE id = $1 AND active = true',
+        [validatedData.membroInstrutorId]
       );
-      if (instructorCheck.rows.length === 0) {
+      if (instrutorCheck.rows.length === 0) {
         return NextResponse.json(
           { error: 'Instrutor não encontrado' },
           { status: 404 }
@@ -237,13 +237,13 @@ export async function PUT(request: NextRequest) {
 
     const result = await pool.query(
       `UPDATE horarios_aulas
-       SET academia_id = $1, instructor_id = $2, day_of_week = $3, start_time = $4,
+       SET academia_id = $1, membro_instrutor_id = $2, day_of_week = $3, start_time = $4,
            end_time = $5, class_type = $6, description = $7, active = $8
        WHERE id = $9
-       RETURNING id, academia_id, instructor_id, day_of_week, start_time, end_time, class_type, description, active, created_at`,
+       RETURNING id, academia_id, membro_instrutor_id, day_of_week, start_time, end_time, class_type, description, active, created_at`,
       [
         validatedData.academiaId,
-        validatedData.instructorId || null,
+        validatedData.membroInstrutorId || null,
         validatedData.dayOfWeek,
         validatedData.startTime,
         validatedData.endTime,
@@ -267,7 +267,7 @@ export async function PUT(request: NextRequest) {
       horario: {
         id: horario.id,
         academiaId: horario.academia_id,
-        instructorId: horario.instructor_id,
+        membroInstrutorId: horario.membro_instrutor_id,
         dayOfWeek: horario.day_of_week,
         startTime: horario.start_time,
         endTime: horario.end_time,
