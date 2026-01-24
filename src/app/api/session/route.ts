@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getSessionData } from '@/lib/session';
+import { getSessionDataWithInstructor } from '@/lib/session';
 
 export async function GET() {
   try {
-    const sessionData = await getSessionData();
+    const sessionData = await getSessionDataWithInstructor();
 
     if (!sessionData) {
       return NextResponse.json(
@@ -16,6 +16,7 @@ export async function GET() {
       authenticated: true,
       user: sessionData.user,
       membro: sessionData.membro,
+      isInstructor: sessionData.isInstructor,
     });
   } catch (error) {
     console.error('Erro ao verificar sessão:', error);

@@ -31,7 +31,8 @@ import {
   Award,
   GraduationCap,
   Eye,
-  UserCheck
+  UserCheck,
+  CheckCircle
 } from 'lucide-react';
 import { Modal, ModalFooter } from './ui/modal';
 
@@ -134,6 +135,11 @@ interface DashboardStats {
   totalAlunos: number;
   totalMestres: number;
   totalInstrutores: number;
+  totalAcademias: number;
+  totalEventos: number;
+  totalInscricoes: number;
+  presencasMes: number;
+  presencasSemana: number;
 }
 
 interface Graduacao {
@@ -1043,6 +1049,60 @@ export function AdminDashboard() {
                       </p>
                     </div>
                     <Shield className="w-10 h-10 text-purple-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Second row of stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Academias Ativas</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats?.totalAcademias || 0}</p>
+                    </div>
+                    <Building2 className="w-10 h-10 text-indigo-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Eventos Ativos</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats?.totalEventos || 0}</p>
+                    </div>
+                    <CalendarDays className="w-10 h-10 text-pink-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Inscrições em Eventos</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats?.totalInscricoes || 0}</p>
+                    </div>
+                    <UserCheck className="w-10 h-10 text-teal-600" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Presenças no Mês</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats?.presencasMes || 0}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {stats?.presencasSemana || 0} esta semana
+                      </p>
+                    </div>
+                    <CheckCircle className="w-10 h-10 text-emerald-600" />
                   </div>
                 </CardContent>
               </Card>

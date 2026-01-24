@@ -46,11 +46,23 @@ CREATE TABLE IF NOT EXISTS graduacoes (
   cor_primaria VARCHAR(7) NOT NULL,
   cor_secundaria VARCHAR(7),
   ordem INTEGER NOT NULL DEFAULT 0,
+  tipo VARCHAR(20) NOT NULL DEFAULT 'aluno',
   descricao TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_graduacoes_ordem ON graduacoes(ordem);
+
+-- Adiciona coluna tipo se não existir (para migrations incrementais)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'graduacoes' AND column_name = 'tipo') THEN
+    ALTER TABLE graduacoes ADD COLUMN tipo VARCHAR(20) NOT NULL DEFAULT 'aluno';
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_graduacoes_tipo ON graduacoes(tipo);
 
 -- =====================================================
 -- TABELA: ACADEMIAS
@@ -180,26 +192,29 @@ CREATE INDEX IF NOT EXISTS idx_usuarios_membros_membro ON usuarios_membros(membr
 
 -- =====================================================
 -- INSERIR GRADUAÇÕES PADRÃO DO GRUPO INGA
+-- Tipos: aluno, formado, mestre
 -- =====================================================
-INSERT INTO graduacoes (nome, corda, cor_primaria, cor_secundaria, ordem, descricao)
+INSERT INTO graduacoes (nome, corda, cor_primaria, cor_secundaria, ordem, tipo, descricao)
 VALUES
-  ('Iniciante', 'Crua', '#F5F5DC', NULL, 1, 'Aluno iniciante, sem batizado'),
-  ('Batizado', 'Crua-Amarela', '#F5F5DC', '#FFD700', 2, 'Primeiro batizado'),
-  ('Amarela', 'Amarela', '#FFD700', NULL, 3, 'Corda amarela'),
-  ('Amarela-Laranja', 'Amarela-Laranja', '#FFD700', '#FF8C00', 4, 'Transição amarela para laranja'),
-  ('Laranja', 'Laranja', '#FF8C00', NULL, 5, 'Corda laranja'),
-  ('Laranja-Azul', 'Laranja-Azul', '#FF8C00', '#1E90FF', 6, 'Transição laranja para azul'),
-  ('Azul', 'Azul', '#1E90FF', NULL, 7, 'Corda azul'),
-  ('Azul-Verde', 'Azul-Verde', '#1E90FF', '#22C55E', 8, 'Transição azul para verde'),
-  ('Verde', 'Verde', '#22C55E', NULL, 9, 'Corda verde'),
-  ('Verde-Roxa', 'Verde-Roxa', '#22C55E', '#8B5CF6', 10, 'Transição verde para roxa'),
-  ('Roxa', 'Roxa', '#8B5CF6', NULL, 11, 'Corda roxa'),
-  ('Roxa-Marrom', 'Roxa-Marrom', '#8B5CF6', '#8B4513', 12, 'Transição roxa para marrom'),
-  ('Marrom', 'Marrom', '#8B4513', NULL, 13, 'Corda marrom'),
-  ('Marrom-Vermelha', 'Marrom-Vermelha', '#8B4513', '#DC2626', 14, 'Transição marrom para vermelha'),
-  ('Vermelha', 'Vermelha', '#DC2626', NULL, 15, 'Corda vermelha - Formado'),
-  ('Vermelha-Branca', 'Vermelha-Branca', '#DC2626', '#FFFFFF', 16, 'Contra-Mestre'),
-  ('Branca', 'Branca', '#FFFFFF', NULL, 17, 'Mestre')
+  ('Aluno', 'Crua e Verde', "#EDEEE9", '#22C55E', 1, 'Adulto', 'Primeira Corda do Aluno'),
+  ('Aluno', 'Crua e Amarela', "#EDEEE9", '#FFD700', 2, 'Adulto', 'Segunda Corda do Aluno'),
+  ('Aluno', 'Crua e Azul', "#EDEEE9", '#1E90FF', 3, 'Adulto', 'Terceira Corda do Aluno'),
+  ('Aluno', 'Verde', 'Verde', '#22C55E', NULL, 4, 'infantil', 'Corda verde infantil'),
+  ('Amarela', 'Amarela', '#FFD700', NULL, 3, 'aluno', 'Corda amarela'),
+  ('Amarela-Laranja', 'Amarela-Laranja', '#FFD700', '#FF8C00', 4, 'aluno', 'Transição amarela para laranja'),
+  ('Laranja', 'Laranja', '#FF8C00', NULL, 5, 'aluno', 'Corda laranja'),
+  ('Laranja-Azul', 'Laranja-Azul', '#FF8C00', '#1E90FF', 6, 'aluno', 'Transição laranja para azul'),
+  ('Azul', 'Azul', '#1E90FF', NULL, 7, 'aluno', 'Corda azul'),
+  ('Azul-Verde', 'Azul-Verde', '#1E90FF', '#22C55E', 8, 'aluno', 'Transição azul para verde'),
+  ('Verde', 'Verde', '#22C55E', NULL, 9, 'aluno', 'Corda verde'),
+  ('Verde-Roxa', 'Verde-Roxa', '#22C55E', '#8B5CF6', 10, 'aluno', 'Transição verde para roxa'),
+  ('Roxa', 'Roxa', '#8B5CF6', NULL, 11, 'aluno', 'Corda roxa'),
+  ('Roxa-Marrom', 'Roxa-Marrom', '#8B5CF6', '#8B4513', 12, 'aluno', 'Transição roxa para marrom'),
+  ('Marrom', 'Marrom', '#8B4513', NULL, 13, 'aluno', 'Corda marrom'),
+  ('Marrom-Vermelha', 'Marrom-Vermelha', '#8B4513', '#DC2626', 14, 'aluno', 'Transição marrom para vermelha'),
+  ('Vermelha', 'Vermelha', '#DC2626', NULL, 15, 'formado', 'Corda vermelha - Formado'),
+  ('Vermelha-Branca', 'Vermelha-Branca', '#DC2626', '#FFFFFF', 16, 'mestre', 'Contra-Mestre'),
+  ('Branca', 'Branca', '#FFFFFF', NULL, 17, 'mestre', 'Mestre')
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
@@ -260,3 +275,25 @@ CREATE INDEX IF NOT EXISTS idx_inscricoes_evento ON inscricoes_eventos(evento_id
 CREATE INDEX IF NOT EXISTS idx_inscricoes_membro ON inscricoes_eventos(membro_id);
 CREATE INDEX IF NOT EXISTS idx_inscricoes_usuario ON inscricoes_eventos(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_inscricoes_status ON inscricoes_eventos(status);
+
+-- =====================================================
+-- TABELA: PRESENCAS
+-- Registro de presença nas aulas
+-- =====================================================
+CREATE TABLE IF NOT EXISTS presencas (
+  id SERIAL PRIMARY KEY,
+  horario_aula_id INTEGER NOT NULL REFERENCES horarios_aulas(id) ON DELETE CASCADE,
+  membro_id INTEGER NOT NULL REFERENCES membros(id) ON DELETE CASCADE,
+  data_aula DATE NOT NULL,
+  presente BOOLEAN DEFAULT true,
+  hora_checkin TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  metodo_checkin VARCHAR(20) DEFAULT 'manual',
+  registrado_por INTEGER REFERENCES membros(id),
+  observacoes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(horario_aula_id, membro_id, data_aula)
+);
+
+CREATE INDEX IF NOT EXISTS idx_presencas_horario ON presencas(horario_aula_id);
+CREATE INDEX IF NOT EXISTS idx_presencas_membro ON presencas(membro_id);
+CREATE INDEX IF NOT EXISTS idx_presencas_data ON presencas(data_aula);

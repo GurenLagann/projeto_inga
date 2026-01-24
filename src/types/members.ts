@@ -7,12 +7,24 @@ export interface Course {
   thumbnail: string;
 }
 
+export interface AcademyHorario {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  classType: string | null;
+}
+
 export interface Academy {
   id: number;
   name: string;
   address: string;
+  city?: string;
+  neighborhood?: string;
   phone: string;
+  email?: string;
+  description?: string;
   schedule: string;
+  horarios?: AcademyHorario[];
 }
 
 // Usuário do sistema (login)
@@ -106,4 +118,97 @@ export interface DashboardStats {
   totalAlunos: number;
   totalMestres: number;
   totalInstrutores: number;
+  totalAcademias: number;
+  totalEventos: number;
+  totalInscricoes: number;
+  presencasMes: number;
+  presencasSemana: number;
+}
+
+// Presença em aula
+export interface Presenca {
+  id: number;
+  horarioAulaId: number;
+  membroId: number;
+  dataAula: string;
+  presente: boolean;
+  horaCheckin: string | null;
+  metodoCheckin: 'manual' | 'qrcode';
+  registradoPor: number | null;
+  observacoes: string | null;
+  membroNome?: string;
+  membroApelido?: string;
+  academiaNome?: string;
+  horarioInfo?: string;
+}
+
+// Relatório de Presença
+export interface RelatorioPresenca {
+  membroId: number;
+  nome: string;
+  apelido: string | null;
+  totalPresencas: number;
+  presencasConfirmadas: number;
+  faltas: number;
+  percentualPresenca: number;
+}
+
+// Item do Calendário
+export interface CalendarioItem {
+  id: number;
+  tipo: 'evento' | 'aula';
+  titulo: string;
+  descricao: string | null;
+  dataInicio: string;
+  dataFim: string | null;
+  horaInicio: string | null;
+  horaFim: string | null;
+  local: string | null;
+  cor: string;
+}
+
+// Aula do Instrutor
+export interface AulaInstrutor {
+  id: number;
+  academiaId: number;
+  academiaNome: string;
+  diaSemana: number;
+  horaInicio: string;
+  horaFim: string;
+  tipoAula: string | null;
+  totalAlunos?: number;
+}
+
+// Aluno da Academia
+export interface AlunoAcademia {
+  id: number;
+  nome: string;
+  apelido: string | null;
+  email: string;
+  graduacao: string | null;
+  graduacaoCor: string | null;
+  totalPresencas: number;
+  ultimaPresenca: string | null;
+}
+
+// Estatísticas de Crescimento
+export interface EstatisticasCrescimento {
+  periodo: string;
+  novosAlunos: number;
+  total: number;
+}
+
+// Horário de aula (para uso no instrutor)
+export interface HorarioAula {
+  id: number;
+  academiaId: number;
+  academiaNome: string;
+  membroInstrutorId: number | null;
+  instrutorNome: string | null;
+  diaSemana: number;
+  horaInicio: string;
+  horaFim: string;
+  tipoAula: string | null;
+  descricao: string | null;
+  active: boolean;
 }

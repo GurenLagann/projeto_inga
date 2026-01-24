@@ -2,23 +2,25 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
-import { Label } from './ui/label';
-import { Play, MapPin, User, Video, Map, Shield, CalendarDays, Calendar, Clock, Loader2, Check, X } from 'lucide-react';
+import { Play, User, Video, Map, Shield, CalendarDays, Calendar, GraduationCap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getCourses, getAcademies } from '@/lib/members-data';
+import { getCourses } from '@/lib/members-data';
 import { Course, Academy, User as UserType, Membro, Evento } from '@/types/members';
 import { LoginForm } from './LoginForm';
 import { StudentProfile } from './StudentProfile';
+import { EventCard } from './EventCard';
+import { AcademyCard } from './AcademyCard';
 
 export function MembersArea() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isInstructor, setIsInstructor] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
@@ -43,6 +45,7 @@ export function MembersArea() {
         setUser(data.user);
         setMembro(data.membro || null);
         setIsAdmin(data.user.admin === 1);
+        setIsInstructor(data.isInstructor || false);
         setIsLoggedIn(true);
       }
     } catch (err) {
@@ -56,10 +59,20 @@ export function MembersArea() {
     setIsLoading(true);
     setError(null);
     try {
-      const [coursesData, academiesData] = await Promise.all([
-        getCourses(),
-        getAcademies()
-      ]);
+      // Buscar cursos (ainda mock)
+      const coursesData = await getCourses();
+      setCourses(coursesData);
+
+      // Buscar academias do banco de dados
+      try {
+        const academiasRes = await fetch('/api/academias');
+        if (academiasRes.ok) {
+          const academiasData = await academiasRes.json();
+          setAcademies(academiasData.academias);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar academias:', err);
+      }
 
       // Buscar dados atualizados do aluno
       try {
@@ -96,9 +109,6 @@ export function MembersArea() {
       } catch (err) {
         console.error('Erro ao buscar eventos:', err);
       }
-
-      setCourses(coursesData);
-      setAcademies(academiesData);
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
       setError('Erro ao carregar dados. Tente novamente.');
@@ -231,6 +241,23 @@ export function MembersArea() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+                onClick={() => router.push('/calendario')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Calendar className="w-4 h-4" />
+                Calendário
+              </Button>
+            {(isInstructor || isAdmin) && (
+              <Button
+                onClick={() => router.push('/instrutor')}
+                className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
+              >
+                <GraduationCap className="w-4 h-4" />
+                Painel Instrutor
+              </Button>
+            )}
             {isAdmin && (
               <Button
                 onClick={() => router.push('/admin')}
@@ -309,109 +336,17 @@ export function MembersArea() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="grid md:grid-cols-2 gap-6">
-                  {eventos.map((evento) => {
-                    const isInscrito = minhasInscricoes.has(evento.id);
-                    const isLoadingEvento = inscricaoLoading === evento.id;
-
-                    return (
-                      <Card key={evento.id} className="hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle className="text-lg mb-2">{evento.titulo}</CardTitle>
-                              <Badge variant="secondary" className="mb-2">
-                                {evento.tipo === 'roda' ? 'Roda' :
-                                 evento.tipo === 'batizado' ? 'Batizado' :
-                                 evento.tipo === 'workshop' ? 'Workshop' :
-                                 evento.tipo === 'treino' ? 'Treino' : 'Evento'}
-                              </Badge>
-                            </div>
-                            {isInscrito && (
-                              <Badge className="bg-green-100 text-green-800">
-                                <Check className="w-3 h-3 mr-1" />
-                                Inscrito
-                              </Badge>
-                            )}
-                          </div>
-                        </CardHeader>
-
-                        <CardContent>
-                          {evento.descricao && (
-                            <p className="text-gray-600 mb-4">{evento.descricao}</p>
-                          )}
-
-                          <div className="space-y-2 mb-4">
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Calendar className="w-4 h-4 mr-2" />
-                              {new Date(evento.dataInicio).toLocaleDateString('pt-BR', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })}
-                            </div>
-                            {evento.horaInicio && (
-                              <div className="flex items-center text-sm text-gray-500">
-                                <Clock className="w-4 h-4 mr-2" />
-                                {evento.horaInicio.substring(0, 5)}
-                                {evento.horaFim && ` - ${evento.horaFim.substring(0, 5)}`}
-                              </div>
-                            )}
-                            {(evento.local || evento.academiaNome) && (
-                              <div className="flex items-center text-sm text-gray-500">
-                                <MapPin className="w-4 h-4 mr-2" />
-                                {evento.local || evento.academiaNome}
-                              </div>
-                            )}
-                          </div>
-
-                          {evento.maxParticipantes && (
-                            <p className="text-sm text-gray-500 mb-4">
-                              {evento.totalInscritos || 0} / {evento.maxParticipantes} inscritos
-                            </p>
-                          )}
-
-                          {isInscrito ? (
-                            <Button
-                              variant="outline"
-                              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => handleCancelarInscricao(evento.id)}
-                              disabled={isLoadingEvento}
-                            >
-                              {isLoadingEvento ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  Cancelando...
-                                </>
-                              ) : (
-                                <>
-                                  <X className="w-4 h-4 mr-2" />
-                                  Cancelar Inscrição
-                                </>
-                              )}
-                            </Button>
-                          ) : (
-                            <Button
-                              className="w-full bg-blue-600 hover:bg-blue-700"
-                              onClick={() => handleInscreverEvento(evento.id)}
-                              disabled={isLoadingEvento || evento.status === 'cancelado'}
-                            >
-                              {isLoadingEvento ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  Inscrevendo...
-                                </>
-                              ) : evento.valor && evento.valor > 0 ? (
-                                `Inscrever-se - R$ ${evento.valor.toFixed(2)}`
-                              ) : (
-                                'Inscrever-se'
-                              )}
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {eventos.map((evento) => (
+                    <EventCard
+                      key={evento.id}
+                      evento={evento}
+                      isInscrito={minhasInscricoes.has(evento.id)}
+                      isLoading={inscricaoLoading === evento.id}
+                      onInscrever={() => handleInscreverEvento(evento.id)}
+                      onCancelar={() => handleCancelarInscricao(evento.id)}
+                    />
+                  ))}
                 </div>
               )}
             </TabsContent>
@@ -456,39 +391,24 @@ export function MembersArea() {
             </TabsContent>
 
             <TabsContent value="academies" className="mt-8">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {academies.map((academy) => (
-                  <Card key={academy.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-blue-600" />
-                        {academy.name}
-                      </CardTitle>
-                    </CardHeader>
-
-                    <CardContent className="space-y-3">
-                      <div>
-                        <Label className="text-sm font-medium">Endereço</Label>
-                        <p className="text-sm text-gray-600 mt-1">{academy.address}</p>
-                      </div>
-
-                      <div>
-                        <Label className="text-sm font-medium">Telefone</Label>
-                        <p className="text-sm text-gray-600 mt-1">{academy.phone}</p>
-                      </div>
-
-                      <div>
-                        <Label className="text-sm font-medium">Horários</Label>
-                        <p className="text-sm text-gray-600 mt-1">{academy.schedule}</p>
-                      </div>
-
-                      <Button className="w-full bg-blue-600 hover:bg-blue-700 mt-4">
-                        Ver no Mapa
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Nossas Academias</h3>
+                <p className="text-gray-600">Encontre a academia mais próxima de você</p>
               </div>
+
+              {academies.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-gray-500">
+                    Nenhuma academia cadastrada no momento.
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {academies.map((academy) => (
+                    <AcademyCard key={academy.id} academy={academy} />
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         )}

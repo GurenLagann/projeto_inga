@@ -43,11 +43,45 @@ export async function GET() {
       WHERE m.active = true AND (g.ordem >= 15 OR h.id IS NOT NULL)
     `);
 
+    // Total de academias ativas
+    const totalAcademiasResult = await pool.query(`
+      SELECT COUNT(*) as total FROM academias WHERE active = true
+    `);
+
+    // Total de eventos ativos
+    const totalEventosResult = await pool.query(`
+      SELECT COUNT(*) as total FROM eventos WHERE active = true
+    `);
+
+    // Total de inscrições confirmadas em eventos
+    const totalInscricoesResult = await pool.query(`
+      SELECT COUNT(*) as total FROM inscricoes_eventos WHERE status = 'confirmada'
+    `);
+
+    // Total de presenças no mês atual
+    const presencasMesResult = await pool.query(`
+      SELECT COUNT(*) as total FROM presencas
+      WHERE data_aula >= DATE_TRUNC('month', CURRENT_DATE)
+      AND presente = true
+    `);
+
+    // Presenças da última semana
+    const presencasSemanaResult = await pool.query(`
+      SELECT COUNT(*) as total FROM presencas
+      WHERE data_aula >= CURRENT_DATE - INTERVAL '7 days'
+      AND presente = true
+    `);
+
     return NextResponse.json({
       stats: {
         totalAlunos: parseInt(totalAlunosResult.rows[0].total) || 0,
         totalMestres: parseInt(totalMestresResult.rows[0].total) || 0,
         totalInstrutores: parseInt(totalInstrutoresResult.rows[0].total) || 0,
+        totalAcademias: parseInt(totalAcademiasResult.rows[0].total) || 0,
+        totalEventos: parseInt(totalEventosResult.rows[0].total) || 0,
+        totalInscricoes: parseInt(totalInscricoesResult.rows[0].total) || 0,
+        presencasMes: parseInt(presencasMesResult.rows[0].total) || 0,
+        presencasSemana: parseInt(presencasSemanaResult.rows[0].total) || 0,
       },
     });
   } catch (error) {

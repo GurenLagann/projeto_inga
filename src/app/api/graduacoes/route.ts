@@ -5,7 +5,7 @@ import { pool } from '@/lib/db';
 export async function GET() {
   try {
     const result = await pool.query(
-      `SELECT id, nome, corda, cor_primaria, cor_secundaria, ordem, descricao
+      `SELECT id, nome, corda, cor_primaria, cor_secundaria, ordem, tipo, descricao
        FROM graduacoes
        ORDER BY ordem ASC`
     );
@@ -18,6 +18,7 @@ export async function GET() {
         corPrimaria: g.cor_primaria,
         corSecundaria: g.cor_secundaria,
         ordem: g.ordem,
+        tipo: g.tipo,
         descricao: g.descricao,
       })),
     });

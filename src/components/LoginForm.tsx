@@ -199,7 +199,7 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
               </Button>
             </form>
 
-            <div className="mt-6 text-center space-y-2" style={{ opacity: 0 }}>
+            <div className="mt-6 text-center space-y-2">
               <p className="text-sm text-gray-600">
                 Não é membro ainda?{' '}
                 <a href="/register" className="text-blue-600 hover:underline transition-colors">

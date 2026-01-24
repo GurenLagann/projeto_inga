@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Calendar, MapPin, Clock, Loader2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
+import { Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Modal, ModalFooter } from './ui/modal';
 import { Evento } from '@/types/members';
+import { EventCard } from './EventCard';
 
 interface InscricaoModalProps {
   evento: Evento | null;
@@ -211,69 +210,6 @@ export function Events() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmado':
-        return 'bg-green-100 text-green-800';
-      case 'vagas_limitadas':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'inscricoes_abertas':
-        return 'bg-blue-100 text-blue-800';
-      case 'cancelado':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'confirmado':
-        return 'Confirmado';
-      case 'vagas_limitadas':
-        return 'Vagas Limitadas';
-      case 'inscricoes_abertas':
-        return 'Inscrições Abertas';
-      case 'cancelado':
-        return 'Cancelado';
-      default:
-        return status;
-    }
-  };
-
-  const getTipoLabel = (tipo: string) => {
-    switch (tipo) {
-      case 'roda':
-        return 'Roda';
-      case 'batizado':
-        return 'Batizado';
-      case 'workshop':
-        return 'Workshop';
-      case 'treino':
-        return 'Treino';
-      case 'geral':
-        return 'Evento';
-      default:
-        return tipo;
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('pt-BR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  const formatTime = (inicio: string | null, fim: string | null) => {
-    if (!inicio) return null;
-    const start = inicio.substring(0, 5);
-    const end = fim ? fim.substring(0, 5) : null;
-    return end ? `${start} - ${end}` : start;
-  };
-
   const openInscricaoModal = (evento: Evento) => {
     setSelectedEvento(evento);
     setShowInscricaoModal(true);
@@ -326,67 +262,13 @@ export function Events() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {eventos.map((evento) => (
-            <Card key={evento.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg mb-2">{evento.titulo}</CardTitle>
-                    <Badge variant="secondary" className="mb-2">
-                      {getTipoLabel(evento.tipo)}
-                    </Badge>
-                  </div>
-                  <Badge className={getStatusColor(evento.status)}>
-                    {getStatusLabel(evento.status)}
-                  </Badge>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                {evento.descricao && (
-                  <p className="text-gray-600 mb-4">{evento.descricao}</p>
-                )}
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    {formatDate(evento.dataInicio)}
-                    {evento.dataFim && evento.dataFim !== evento.dataInicio && (
-                      <> a {formatDate(evento.dataFim)}</>
-                    )}
-                  </div>
-                  {formatTime(evento.horaInicio, evento.horaFim) && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Clock className="w-4 h-4 mr-2" />
-                      {formatTime(evento.horaInicio, evento.horaFim)}
-                    </div>
-                  )}
-                  {(evento.local || evento.academiaNome) && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {evento.local || evento.academiaNome}
-                    </div>
-                  )}
-                </div>
-
-                {evento.maxParticipantes && (
-                  <p className="text-sm text-gray-500 mb-4">
-                    {evento.totalInscritos || 0} / {evento.maxParticipantes} inscritos
-                  </p>
-                )}
-
-                <Button
-                  className="w-full bg-blue-700 hover:bg-blue-800"
-                  onClick={() => openInscricaoModal(evento)}
-                  disabled={evento.status === 'cancelado'}
-                >
-                  {evento.valor && evento.valor > 0
-                    ? `Inscrever-se - R$ ${evento.valor.toFixed(2)}`
-                    : 'Inscrever-se'}
-                </Button>
-              </CardContent>
-            </Card>
+            <EventCard
+              key={evento.id}
+              evento={evento}
+              onInscrever={() => openInscricaoModal(evento)}
+            />
           ))}
         </div>
       </div>

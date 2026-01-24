@@ -208,3 +208,51 @@ export async function isAuthenticated(): Promise<boolean> {
   const user = await getSessionUser();
   return user !== null;
 }
+
+// Verifica se o membro é instrutor
+// É instrutor se:
+// - Graduação tipo 'formado' ou 'mestre'
+// - OU nome da graduação contém: instrutor, professor, contra-mestre, mestre
+// - OU está em horarios_aulas como instrutor
+export async function checkIsInstructor(membroId: number): Promise<boolean> {
+  try {
+    const result = await pool.query(
+      `SELECT EXISTS(
+        SELECT 1 FROM membros m
+        JOIN graduacoes g ON m.graduacao_id = g.id
+        WHERE m.id = $1 AND (
+          g.tipo IN ('formado', 'mestre')
+          OR LOWER(g.nome) LIKE '%instrutor%'
+          OR LOWER(g.nome) LIKE '%professor%'
+          OR LOWER(g.nome) LIKE '%contra-mestre%'
+          OR LOWER(g.nome) LIKE '%contramestre%'
+          OR LOWER(g.nome) LIKE '%mestre%'
+        )
+      ) OR EXISTS(
+        SELECT 1 FROM horarios_aulas
+        WHERE membro_instrutor_id = $1 AND active = true
+      ) AS is_instructor`,
+      [membroId]
+    );
+    return result.rows[0]?.is_instructor || false;
+  } catch (error) {
+    console.error('Erro ao verificar instrutor:', error);
+    return false;
+  }
+}
+
+// Obtém os dados da sessão com informação de instrutor
+export async function getSessionDataWithInstructor(): Promise<(SessionData & { isInstructor: boolean }) | null> {
+  const sessionData = await getSessionData();
+  if (!sessionData) return null;
+
+  let isInstructor = false;
+  if (sessionData.membro) {
+    isInstructor = await checkIsInstructor(sessionData.membro.id);
+  }
+
+  return {
+    ...sessionData,
+    isInstructor
+  };
+}
