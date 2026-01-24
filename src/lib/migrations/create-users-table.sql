@@ -297,3 +297,33 @@ CREATE TABLE IF NOT EXISTS presencas (
 CREATE INDEX IF NOT EXISTS idx_presencas_horario ON presencas(horario_aula_id);
 CREATE INDEX IF NOT EXISTS idx_presencas_membro ON presencas(membro_id);
 CREATE INDEX IF NOT EXISTS idx_presencas_data ON presencas(data_aula);
+
+-- =====================================================
+-- TABELA: VIDEO_AULAS
+-- Aulas em vídeo organizadas por categoria
+-- =====================================================
+CREATE TABLE IF NOT EXISTS video_aulas (
+  id SERIAL PRIMARY KEY,
+  titulo VARCHAR(255) NOT NULL,
+  descricao TEXT,
+  categoria VARCHAR(50) NOT NULL CHECK (categoria IN ('movimentacoes', 'musicalidade', 'historia')),
+  url_video VARCHAR(500) NOT NULL,
+  thumbnail_url VARCHAR(500),
+  duracao VARCHAR(20),
+  nivel VARCHAR(50),
+  instrutor_nome VARCHAR(255),
+  ordem INTEGER DEFAULT 0,
+  active BOOLEAN DEFAULT true,
+  created_by INTEGER REFERENCES usuarios(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_video_aulas_categoria ON video_aulas(categoria);
+CREATE INDEX IF NOT EXISTS idx_video_aulas_active ON video_aulas(active);
+
+DROP TRIGGER IF EXISTS update_video_aulas_updated_at ON video_aulas;
+CREATE TRIGGER update_video_aulas_updated_at
+    BEFORE UPDATE ON video_aulas
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

@@ -212,3 +212,26 @@ export interface HorarioAula {
   descricao: string | null;
   active: boolean;
 }
+
+// Vídeo de aula
+export type VideoCategorias = 'movimentacoes' | 'musicalidade' | 'historia';
+
+export interface VideoAula {
+  id: number;
+  titulo: string;
+  descricao: string | null;
+  categoria: VideoCategorias;
+  urlVideo: string;
+  thumbnailUrl: string | null;
+  duracao: string | null;
+  nivel: string | null;
+  instrutorNome: string | null;
+  ordem: number;
+  createdAt: string;
+}
+
+export interface VideosPorCategoria {
+  movimentacoes: VideoAula[];
+  musicalidade: VideoAula[];
+  historia: VideoAula[];
+}
