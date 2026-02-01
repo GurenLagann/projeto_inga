@@ -10,6 +10,7 @@ A full-stack web application for the Inga Capoeira group, featuring public conte
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Environment Variables](#environment-variables)
+  - [Docker](#docker)
 - [Usage](#usage)
 - [Project Structure](#project-structure)
 - [API Reference](#api-reference)
@@ -72,6 +73,30 @@ Create a `.env.local` file in the root directory:
 
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5555/inga_capoeira
+```
+
+### Docker
+
+Run the entire stack with Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+This will start:
+- **inga_app** - Next.js application on port 3000
+- **inga_postgres** - PostgreSQL database on port 5555
+
+To stop the containers:
+
+```bash
+docker compose down
+```
+
+To rebuild after code changes:
+
+```bash
+docker compose up -d --build
 ```
 
 ## Usage

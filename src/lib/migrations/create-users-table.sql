@@ -196,10 +196,10 @@ CREATE INDEX IF NOT EXISTS idx_usuarios_membros_membro ON usuarios_membros(membr
 -- =====================================================
 INSERT INTO graduacoes (nome, corda, cor_primaria, cor_secundaria, ordem, tipo, descricao)
 VALUES
-  ('Aluno', 'Crua e Verde', "#EDEEE9", '#22C55E', 1, 'Adulto', 'Primeira Corda do Aluno'),
-  ('Aluno', 'Crua e Amarela', "#EDEEE9", '#FFD700', 2, 'Adulto', 'Segunda Corda do Aluno'),
-  ('Aluno', 'Crua e Azul', "#EDEEE9", '#1E90FF', 3, 'Adulto', 'Terceira Corda do Aluno'),
-  ('Aluno', 'Verde', 'Verde', '#22C55E', NULL, 4, 'infantil', 'Corda verde infantil'),
+  ('Aluno', 'Crua e Verde', '#EDEEE9', '#22C55E', 1, 'Adulto', 'Primeira Corda do Aluno'),
+  ('Aluno', 'Crua e Amarela', '#EDEEE9', '#FFD700', 2, 'Adulto', 'Segunda Corda do Aluno'),
+  ('Aluno', 'Crua e Azul', '#EDEEE9', '#1E90FF', 3, 'Adulto', 'Terceira Corda do Aluno'),
+  ('Aluno', 'Verde', '#22C55E', NULL, 4, 'infantil', 'Corda verde infantil'),
   ('Amarela', 'Amarela', '#FFD700', NULL, 3, 'aluno', 'Corda amarela'),
   ('Amarela-Laranja', 'Amarela-Laranja', '#FFD700', '#FF8C00', 4, 'aluno', 'Transição amarela para laranja'),
   ('Laranja', 'Laranja', '#FF8C00', NULL, 5, 'aluno', 'Corda laranja'),
