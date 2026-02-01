@@ -8,6 +8,7 @@ import { About } from './About';
 import { Events } from './Events';
 import { Footer } from './Footer';
 import { HistoryPage } from './HistoryPage';
+import { FloatingCTA } from './FloatingCTA';
 
 export function AppShell() {
   const router = useRouter();

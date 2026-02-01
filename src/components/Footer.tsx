@@ -11,9 +11,13 @@ export function Footer() {
               pequena frase sobre o grupo
             </p>
             <div className="flex space-x-4">
-              <Instagram className="w-5 h-5 text-gray-400 hover:text-blue-700 cursor-pointer transition-colors" />
-              <Facebook className="w-5 h-5 text-gray-400 hover:text-blue-700 cursor-pointer transition-colors" />
-              <Youtube className="w-5 h-5 text-gray-400 hover:text-blue-700 cursor-pointer transition-colors" />
+              <a href="https://www.instagram.com/ingacapoeirasp/" target="_blank" rel="noopener noreferrer">
+                <Instagram className="w-5 h-5 text-gray-400 hover:text-blue-700 cursor-pointer transition-colors" />
+              </a>
+              {/* <Facebook className="w-5 h-5 text-gray-400 hover:text-blue-700 cursor-pointer transition-colors" /> */}
+              <a href="https://www.youtube.com/@ingacapoeira" target="_blank" rel="noopener noreferrer">
+                <Youtube className="w-5 h-5 text-gray-400 hover:text-blue-700 cursor-pointer transition-colors" />
+              </a>
             </div>
           </div>
 

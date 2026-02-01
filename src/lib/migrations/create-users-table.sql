@@ -327,3 +327,24 @@ CREATE TRIGGER update_video_aulas_updated_at
     BEFORE UPDATE ON video_aulas
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- TABELA: INTERESSADOS
+-- Pessoas interessadas em conhecer a capoeira
+-- =====================================================
+CREATE TABLE IF NOT EXISTS interessados (
+  id SERIAL PRIMARY KEY,
+  nome VARCHAR(255) NOT NULL,
+  telefone VARCHAR(30),
+  email VARCHAR(255),
+  experiencia_capoeira BOOLEAN DEFAULT false,
+  academia_interesse_id INTEGER REFERENCES academias(id),
+  observacoes TEXT,
+  status VARCHAR(20) DEFAULT 'novo',
+  contatado_em TIMESTAMP,
+  contatado_por INTEGER REFERENCES usuarios(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_interessados_status ON interessados(status);
+CREATE INDEX IF NOT EXISTS idx_interessados_academia ON interessados(academia_interesse_id);
